@@ -49,7 +49,6 @@ import org.bukkit.event.block.*;
 import org.bukkit.event.player.*;
 import org.bukkit.event.entity.*;
 import org.bukkit.Material.*;
-import org.bukkit.material.*;
 import org.bukkit.block.*;
 import org.bukkit.entity.*;
 import org.bukkit.command.*;
@@ -71,9 +70,31 @@ class AntiDispenserTask implements Runnable {
     }
 
     public void run() {
+        // TODO: other projectiles? snowballs?
         Block block = getArrowHit(arrow);
 
-        plugin.log.info("arrow hit " + block);
+        if (block.getType() != Material.DISPENSER) {
+            return;
+        }
+
+        BlockState blockState = block.getState();
+        if (!(blockState instanceof Dispenser)) {
+            return;
+        }
+        Dispenser dispenser = (Dispenser)blockState;
+
+        Inventory inventory = dispenser.getInventory();
+
+        arrow.remove();
+
+        // TODO: only if not infinite arrow?
+        inventory.addItem(new ItemStack(Material.ARROW, 1));
+        // TODO: detect if full! then don't remove entity
+
+        // TODO: configurable
+        if (plugin.getConfig().getBoolean("dispense", true)) {
+            dispenser.dispense();
+        }
     }
 
     // Get the block an arrow hit [from EnchantMore]
@@ -125,8 +146,6 @@ class AntiDispenserListener implements Listener {
         Arrow arrow = (Arrow)entity;
 
         Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new AntiDispenserTask(arrow, plugin));
-
-        plugin.log.info("arrow hit "+arrow);
     }
 
 }
