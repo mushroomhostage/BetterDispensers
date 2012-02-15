@@ -57,16 +57,86 @@ import org.bukkit.inventory.*;
 import org.bukkit.configuration.*;
 import org.bukkit.configuration.file.*;
 import org.bukkit.scheduler.*;
-import org.bukkit.enchantments.*;
 import org.bukkit.*;
 
-import net.minecraft.server.CraftingManager;
+import org.bukkit.craftbukkit.entity.CraftArrow;
+
+class AntiDispenserTask implements Runnable {
+    Arrow arrow;
+    AntiDispenser plugin;
+
+    public AntiDispenserTask(Arrow arrow, AntiDispenser plugin) {
+        this.arrow = arrow;
+        this.plugin = plugin;
+    }
+
+    public void run() {
+        Block block = getArrowHit(arrow);
+
+        plugin.log.info("arrow hit " + block);
+    }
+
+    // Get the block an arrow hit [from EnchantMore]
+    // see http://forums.bukkit.org/threads/on-how-to-get-the-block-an-arrow-lands-in.55768/#post-954542
+    public Block getArrowHit(Arrow arrow) {
+        World world = arrow.getWorld();
+
+        net.minecraft.server.EntityArrow entityArrow = ((CraftArrow)arrow).getHandle();
+
+        try {
+            // saved to NBT tag as xTile,yTile,zTile
+            Field fieldX = net.minecraft.server.EntityArrow.class.getDeclaredField("e");
+            Field fieldY = net.minecraft.server.EntityArrow.class.getDeclaredField("f");
+            Field fieldZ = net.minecraft.server.EntityArrow.class.getDeclaredField("g");
+
+            fieldX.setAccessible(true);
+            fieldY.setAccessible(true);
+            fieldZ.setAccessible(true);
+
+            int x = fieldX.getInt(entityArrow);
+            int y = fieldY.getInt(entityArrow);
+            int z = fieldZ.getInt(entityArrow);
+
+            return world.getBlockAt(x, y, z);
+        } catch (Exception e) {
+            plugin.log.info("getArrowHit("+arrow+" reflection failed: "+e);
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+}
+
+class AntiDispenserListener implements Listener {
+    AntiDispenser plugin;
+
+    public AntiDispenserListener(AntiDispenser plugin) {
+        this.plugin = plugin;
+
+        Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
+    }
+
+    @EventHandler(priority = EventPriority.NORMAL)
+    public void onProjectileHit(ProjectileHitEvent event) {
+        Entity entity = event.getEntity();
+        if (!(entity instanceof Arrow)) {
+            return;
+        }
+
+        Arrow arrow = (Arrow)entity;
+
+        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new AntiDispenserTask(arrow, plugin));
+
+        plugin.log.info("arrow hit "+arrow);
+    }
+
+}
 
 public class AntiDispenser extends JavaPlugin {
     Logger log = Logger.getLogger("Minecraft");
+    AntiDispenserListener listener;
 
     public void onEnable() {
-        log.info("antidispenser");
+        listener = new AntiDispenserListener(this);
     }
 
     public void onDisable() {
