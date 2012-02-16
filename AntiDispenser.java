@@ -255,22 +255,45 @@ public class AntiDispenser extends JavaPlugin {
 
         byte data = blockState.getRawData();
 
-        // cycle through states
-        // TODO: better interface, /dispenser up, down, etc.
-        data += 1;
-        if (data > 5) {
-            data = 0;
+        if (args.length > 0) {
+            // change direction
+            data = stringToDir(args[0]);
         }
-        
+
         // 0,1,6+ = no front texture, always fire west
         blockState.setData(new MaterialData(Material.DISPENSER.getId(), (byte)data));
         blockState.update(true);
 
-        sender.sendMessage("Data set to "+data);
-
-
+        sender.sendMessage("Dispenser is facing " + dirToString(data));
 
 
         return true;
+    }
+
+    // Convert human-readable string to dispenser block data value
+    public byte stringToDir(String s) {
+        char c = s.toLowerCase().charAt(0);
+        switch (c) {
+        case 'd': return 0;
+        case 'u': return 1;
+        case 'n': return 2;
+        case 's': return 3;
+        case 'w': return 4;
+        case 'e': return 5;
+        default: throw new IllegalArgumentException("Invalid direction: " + s);
+        }
+    }
+
+    // Convert dispenser data value to human-readable direction string
+    public String dirToString(byte x) {
+        switch (x) {
+        case 0: return "down";
+        case 1: return "up";
+        case 2: return "north";
+        case 3: return "south";
+        case 4: return "west";
+        case 5: return "east";
+        default: return "unknown";
+        }
     }
 }

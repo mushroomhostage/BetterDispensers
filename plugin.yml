@@ -4,4 +4,5 @@ version: 0.2
 commands:
     dispenser:
         description: Change or view dispenser information
-        usage: /<command>
+        usage: /<command> [direction]
+        aliases: disp
