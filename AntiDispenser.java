@@ -177,19 +177,42 @@ class AntiDispenserListener implements Listener {
             return;
         }*/
 
+        byte data = blockState.getRawData();
+        int v;
+        switch (data) {
+        case 0:     // down
+            v = -1;
+            break;
+        case 1:     // up
+            v = 10;
+            break;
+        case 2:     // north
+        case 3:     // south
+        case 4:     // west
+        case 5:     // east
+            // standard directions
+            return;
+        default:
+            // 6-15 unused
+            plugin.log.info("unknown data value "+data);
+            return;
+        }
+
         // shoot arrows outselves
         event.setCancelled(true);
 
         net.minecraft.server.World world = ((CraftWorld)block.getWorld()).getHandle();
+        int x = block.getX(), y = block.getY(), z = block.getZ();
 
         net.minecraft.server.EntityArrow arrow = new net.minecraft.server.EntityArrow(
             world,
-            block.getX() + 0.5,
-            block.getY() + 0.5 + 2.0,
-            block.getZ() + 0.5);
-        arrow.shoot(0, 0.10000000149011612D*10, 0, 1.1f, 6.0f);
+            x + 0.5,        // center of block face
+            y + 0.5 + 2.0,
+            z + 0.5);
+        arrow.shoot(0, 10, 0, 1.1f, 6.0f);   // up
         arrow.fromPlayer = true;
         world.addEntity(arrow);
+        world.f(1002, x, y, z, 0);  // playAuxSfx - dispenser smoke
 
         /*
         block.getRelative(0,1,0).setType(Material.GLASS);
@@ -207,5 +230,20 @@ public class AntiDispenser extends JavaPlugin {
     }
 
     public void onDisable() {
+    }
+
+    public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
+        if (!cmd.getName().equalsIgnoreCase("dispenser")) {
+            return false;
+        }
+
+        if (!(sender instanceof Player)) {
+            // TODO: support specifying dispensers without looking somehow
+            return false;
+        }
+
+        Player player = (Player)sender;
+
+        return true;
     }
 }

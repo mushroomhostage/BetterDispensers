@@ -1,3 +1,7 @@
 name: AntiDispenser
 main: me.exphc.AntiDispenser.AntiDispenser
-version: 0.1
+version: 0.2
+commands:
+    dispenser:
+        description: Change or view dispenser information
+        usage: /<command>
