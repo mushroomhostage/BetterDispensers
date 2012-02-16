@@ -35,7 +35,6 @@ import java.util.HashMap;
 import java.util.UUID;
 import java.util.Iterator;
 import java.util.logging.Logger;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Formatter;
 import java.lang.Byte;
 import java.lang.reflect.Field;
@@ -49,6 +48,7 @@ import org.bukkit.event.block.*;
 import org.bukkit.event.player.*;
 import org.bukkit.event.entity.*;
 import org.bukkit.Material.*;
+import org.bukkit.material.MaterialData;
 import org.bukkit.block.*;
 import org.bukkit.entity.*;
 import org.bukkit.command.*;
@@ -56,9 +56,11 @@ import org.bukkit.inventory.*;
 import org.bukkit.configuration.*;
 import org.bukkit.configuration.file.*;
 import org.bukkit.scheduler.*;
+import org.bukkit.util.Vector;
 import org.bukkit.*;
 
 import org.bukkit.craftbukkit.entity.CraftArrow;
+import org.bukkit.craftbukkit.CraftWorld;
 
 class AntiDispenserTask implements Runnable {
     Arrow arrow;
@@ -81,6 +83,11 @@ class AntiDispenserTask implements Runnable {
         if (!(blockState instanceof Dispenser)) {
             return;
         }
+        /* 0,1,6+ = no front texture, always fire west
+        blockState.setData(new MaterialData(Material.DISPENSER.getId(), (byte)1));
+        blockState.update(true);
+        */
+
         Dispenser dispenser = (Dispenser)blockState;
 
         Inventory inventory = dispenser.getInventory();
@@ -145,9 +152,50 @@ class AntiDispenserListener implements Listener {
 
         Arrow arrow = (Arrow)entity;
 
+        // must schedule a task since arrow collision detection hasn't happened yet
         Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new AntiDispenserTask(arrow, plugin));
     }
 
+    @EventHandler(priority = EventPriority.NORMAL)
+    public void onBlockDispense(BlockDispenseEvent event) {
+        plugin.log.info("dispense"+event);
+        Block block = event.getBlock();
+        BlockState blockState = block.getState();
+        if (!(blockState instanceof Dispenser)) {
+            return;
+        }
+        
+        Dispenser dispenser = (Dispenser)blockState;
+       
+        // velocity from event doesn't change arrows
+        // see BlockDispenser.java, special cases for projectiles, do not take into account motX/Y/Z
+        //event.setVelocity(new Vector(0, 1, 0));
+        //event.setItem(new ItemStack(Material.SNOW, 1)); 
+        /*
+        ItemStack item = event.getItem();
+        if (item.getType() != Material.ARROW) {
+            return;
+        }*/
+
+        // shoot arrows outselves
+        event.setCancelled(true);
+
+        net.minecraft.server.World world = ((CraftWorld)block.getWorld()).getHandle();
+
+        net.minecraft.server.EntityArrow arrow = new net.minecraft.server.EntityArrow(
+            world,
+            block.getX() + 0.5,
+            block.getY() + 0.5 + 2.0,
+            block.getZ() + 0.5);
+        arrow.shoot(0, 0.10000000149011612D*10, 0, 1.1f, 6.0f);
+        arrow.fromPlayer = true;
+        world.addEntity(arrow);
+
+        /*
+        block.getRelative(0,1,0).setType(Material.GLASS);
+        block.getWorld().spawnArrow(block.getRelative(0,2,0).getLocation(), new Vector(0,1,0), 10, 0);
+        */
+    }
 }
 
 public class AntiDispenser extends JavaPlugin {
