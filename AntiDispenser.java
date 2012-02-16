@@ -62,11 +62,11 @@ import org.bukkit.*;
 import org.bukkit.craftbukkit.entity.CraftArrow;
 import org.bukkit.craftbukkit.CraftWorld;
 
-class AntiDispenserTask implements Runnable {
+class AntiDispenserAcceptTask implements Runnable {
     Arrow arrow;
     AntiDispenser plugin;
 
-    public AntiDispenserTask(Arrow arrow, AntiDispenser plugin) {
+    public AntiDispenserAcceptTask(Arrow arrow, AntiDispenser plugin) {
         this.arrow = arrow;
         this.plugin = plugin;
     }
@@ -130,6 +130,25 @@ class AntiDispenserTask implements Runnable {
 
 }
 
+// Task to set dispenser orientation
+class AntiDispenserOrientTask implements Runnable {
+    byte data;
+    Block block;
+    AntiDispenser plugin;
+
+    public AntiDispenserOrientTask(byte data, Block block, AntiDispenser plugin) {
+        this.data = data;
+        this.block = block;
+        this.plugin = plugin;
+    }
+
+    public void run() {
+        BlockState blockState = block.getState();
+        blockState.setData(new MaterialData(Material.DISPENSER.getId(), data));
+        blockState.update(true);
+    }
+}
+
 class AntiDispenserListener implements Listener {
     AntiDispenser plugin;
 
@@ -139,6 +158,7 @@ class AntiDispenserListener implements Listener {
         Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
+    // accept arrows inside dispensers
     @EventHandler(priority = EventPriority.NORMAL)
     public void onProjectileHit(ProjectileHitEvent event) {
         Entity entity = event.getEntity();
@@ -149,9 +169,36 @@ class AntiDispenserListener implements Listener {
         Arrow arrow = (Arrow)entity;
 
         // must schedule a task since arrow collision detection hasn't happened yet
-        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new AntiDispenserTask(arrow, plugin));
+        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new AntiDispenserAcceptTask(arrow, plugin));
     }
 
+    
+    @EventHandler(priority = EventPriority.NORMAL)
+    public void onBlockPlace(BlockPlaceEvent event) {
+        Block block = event.getBlockPlaced();
+        if (block.getType() != Material.DISPENSER) {
+            return;
+        }
+
+        Block blockAgainst = event.getBlockAgainst();
+        Player player = event.getPlayer();
+
+        plugin.log.info("placed "+block.getLocation()+" by "+player.getLocation());
+
+        Location from = player.getLocation();
+        Location to = block.getLocation();
+
+        double distance = from.distance(to);
+
+        int dy = from.getBlockX() - to.getBlockX(); // + if we're above, - if below
+        player.sendMessage("dy="+dy+", distance="+distance);
+        // TODO: we need to intelligent set orientation, like how pistons do
+        byte data = (byte)1;
+
+        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new AntiDispenserOrientTask(data, block, plugin));
+    }
+
+    // handle up/down dispensers
     @EventHandler(priority = EventPriority.NORMAL)
     public void onBlockDispense(BlockDispenseEvent event) {
         plugin.log.info("dispense"+event);
@@ -271,7 +318,7 @@ public class AntiDispenser extends JavaPlugin {
     }
 
     // Convert human-readable string to dispenser block data value
-    public byte stringToDir(String s) {
+    static public byte stringToDir(String s) {
         char c = s.toLowerCase().charAt(0);
         switch (c) {
         case 'd': return 0;
@@ -285,7 +332,7 @@ public class AntiDispenser extends JavaPlugin {
     }
 
     // Convert dispenser data value to human-readable direction string
-    public String dirToString(byte x) {
+    static public String dirToString(byte x) {
         switch (x) {
         case 0: return "down";
         case 1: return "up";
