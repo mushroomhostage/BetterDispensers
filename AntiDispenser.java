@@ -186,16 +186,14 @@ class AntiDispenserListener implements Listener {
 
         plugin.log.info("placed "+block.getLocation()+" by "+player.getLocation());
 
-        // BlockDispenser onBlockPlacedBy (MCP) postPlace (CB)
-        net.minecraft.server.EntityLiving entityliving = ((CraftPlayer)player).getHandle();
-
-        int l = net.minecraft.server.MathHelper.floor((double) (entityliving.yaw * 4.0F / 360.0F) + 0.5D) & 3;
+        // Intelligently set orientation like pistons do
+        int l = plugin.determineOrientation(block.getLocation(), player);
         player.sendMessage("l="+l);
+        if (l != -1) {
+            byte data = (byte)l;
 
-        // TODO: we need to intelligent set orientation, like how pistons do
-        //byte data = (byte)1;
-
-        //TODO Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new AntiDispenserOrientTask(data, block, plugin));
+            Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new AntiDispenserOrientTask(data, block, plugin));
+        }
     }
 
     // handle up/down dispensers
@@ -272,12 +270,55 @@ class AntiDispenserListener implements Listener {
 public class AntiDispenser extends JavaPlugin {
     Logger log = Logger.getLogger("Minecraft");
     AntiDispenserListener listener;
+    Method determineOrientationMethod;
 
     public void onEnable() {
         listener = new AntiDispenserListener(this);
+
+        // Reuse piston orientation determination code since they can face in all directions
+        try {
+            String fieldName = getConfig().getString("determineOrientationMethod", "c"); // MCP determineOrientation
+
+            determineOrientationMethod = net.minecraft.server.BlockPiston.class.getDeclaredMethod(
+                fieldName,
+                net.minecraft.server.World.class,
+                int.class,
+                int.class,
+                int.class,
+                net.minecraft.server.EntityHuman.class
+                );
+            determineOrientationMethod.setAccessible(true);
+        } catch (Exception e) {
+            log.severe("Failed to reflect, automatic orientation disabled: " + e);
+            determineOrientationMethod = null;
+        }
     }
 
     public void onDisable() {
+    }
+
+    // Get metadata for setting block orientation
+    public int determineOrientation(Location loc, Player player) {
+        if (determineOrientationMethod == null) {
+            return -1;
+        }
+
+        int i = loc.getBlockX();
+        int j = loc.getBlockY();
+        int k = loc.getBlockZ();
+
+        net.minecraft.server.EntityHuman entityhuman = ((CraftPlayer)player).getHandle();
+
+        int l = -1;
+        try {
+            Object obj = determineOrientationMethod.invoke(null, new Object[] { null, i, j, k, entityhuman });
+            l = ((Integer)obj).intValue();
+        } catch (Exception e) {
+            log.severe("Failed to invoke determineOrientation");
+            return -1;
+        }
+
+        return l;
     }
 
     public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
