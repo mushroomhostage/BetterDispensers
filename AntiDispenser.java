@@ -60,6 +60,7 @@ import org.bukkit.util.Vector;
 import org.bukkit.*;
 
 import org.bukkit.craftbukkit.entity.CraftArrow;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.CraftWorld;
 
 class AntiDispenserAcceptTask implements Runnable {
@@ -185,15 +186,14 @@ class AntiDispenserListener implements Listener {
 
         plugin.log.info("placed "+block.getLocation()+" by "+player.getLocation());
 
-        Location from = player.getLocation();
-        Location to = block.getLocation();
+        // BlockDispenser onBlockPlacedBy (MCP) postPlace (CB)
+        net.minecraft.server.EntityLiving entityliving = ((CraftPlayer)player).getHandle();
 
-        double distance = from.distance(to);
+        int l = net.minecraft.server.MathHelper.floor((double) (entityliving.yaw * 4.0F / 360.0F) + 0.5D) & 3;
+        player.sendMessage("l="+l);
 
-        int dy = from.getBlockX() - to.getBlockX(); // + if we're above, - if below
-        player.sendMessage("dy="+dy+", distance="+distance);
         // TODO: we need to intelligent set orientation, like how pistons do
-        byte data = (byte)1;
+        //byte data = (byte)1;
 
         //TODO Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new AntiDispenserOrientTask(data, block, plugin));
     }
