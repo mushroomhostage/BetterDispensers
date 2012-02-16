@@ -83,10 +83,6 @@ class AntiDispenserTask implements Runnable {
         if (!(blockState instanceof Dispenser)) {
             return;
         }
-        /* 0,1,6+ = no front texture, always fire west
-        blockState.setData(new MaterialData(Material.DISPENSER.getId(), (byte)1));
-        blockState.update(true);
-        */
 
         Dispenser dispenser = (Dispenser)blockState;
 
@@ -179,12 +175,15 @@ class AntiDispenserListener implements Listener {
 
         byte data = blockState.getRawData();
         int v;
+        double dy;
         switch (data) {
         case 0:     // down
             v = -1;
+            dy = -1.0;
             break;
         case 1:     // up
             v = 10;
+            dy = 1.0;
             break;
         case 2:     // north
         case 3:     // south
@@ -200,6 +199,8 @@ class AntiDispenserListener implements Listener {
 
         // shoot arrows outselves
         event.setCancelled(true);
+        // TODO: we still need to remove arrow from dispenser inventory!
+        // otherwise we dupe arrows
 
         net.minecraft.server.World world = ((CraftWorld)block.getWorld()).getHandle();
         int x = block.getX(), y = block.getY(), z = block.getZ();
@@ -207,9 +208,9 @@ class AntiDispenserListener implements Listener {
         net.minecraft.server.EntityArrow arrow = new net.minecraft.server.EntityArrow(
             world,
             x + 0.5,        // center of block face
-            y + 0.5 + 2.0,
+            y + 0.5 + dy,
             z + 0.5);
-        arrow.shoot(0, 10, 0, 1.1f, 6.0f);   // up
+        arrow.shoot(0, v, 0, 1.1f, 6.0f);   // up
         arrow.fromPlayer = true;
         world.addEntity(arrow);
         world.f(1002, x, y, z, 0);  // playAuxSfx - dispenser smoke
@@ -243,6 +244,32 @@ public class AntiDispenser extends JavaPlugin {
         }
 
         Player player = (Player)sender;
+
+        Block block = player.getTargetBlock(null, getConfig().getInt("targetReach", 6));
+        if (block == null || block.getType() != Material.DISPENSER) {
+            sender.sendMessage("You must be looking directly at a dispenser to use this command");
+            return true;
+        }
+        BlockState blockState = block.getState();
+        Dispenser dispenser = (Dispenser)blockState;
+
+        byte data = blockState.getRawData();
+
+        // cycle through states
+        // TODO: better interface, /dispenser up, down, etc.
+        data += 1;
+        if (data > 5) {
+            data = 0;
+        }
+        
+        // 0,1,6+ = no front texture, always fire west
+        blockState.setData(new MaterialData(Material.DISPENSER.getId(), (byte)data));
+        blockState.update(true);
+
+        sender.sendMessage("Data set to "+data);
+
+
+
 
         return true;
     }
