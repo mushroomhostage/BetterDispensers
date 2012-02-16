@@ -195,7 +195,7 @@ class AntiDispenserListener implements Listener {
         // TODO: we need to intelligent set orientation, like how pistons do
         byte data = (byte)1;
 
-        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new AntiDispenserOrientTask(data, block, plugin));
+        //TODO Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new AntiDispenserOrientTask(data, block, plugin));
     }
 
     // handle up/down dispensers
