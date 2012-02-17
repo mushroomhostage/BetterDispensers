@@ -401,6 +401,11 @@ public class BetterDispensers extends JavaPlugin {
 
         Player player = (Player)sender;
 
+        if (!player.hasPermission("betterdispensers.command")) {
+            player.sendMessage("You do not have permission to use this command");
+            return true;
+        }
+
         Block block = player.getTargetBlock(null, getConfig().getInt("targetReach", 6));
         if (block == null || block.getType() != Material.DISPENSER) {
             sender.sendMessage("You must be looking directly at a dispenser to use this command");

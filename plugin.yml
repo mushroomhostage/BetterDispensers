@@ -6,3 +6,11 @@ commands:
         description: Change or view dispenser information
         usage: /<command> [direction]
         aliases: disp
+permissions:
+    betterdispensers.*:
+        children:
+            betterdispensers.command: true
+        default: false
+    betterdispensers.command:
+        description: Allows you to use the /dispenser command
+        default: op
