@@ -1,4 +1,4 @@
-BetterDispensers - make dispensers better
+BetterDispensers - vertically-oriented dispensers and more!
 
 With BetterDispensers you can:
 
