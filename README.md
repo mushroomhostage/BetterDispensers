@@ -11,7 +11,8 @@ With BetterDispensers you can:
 2. Add projectiles (arrows, splash potions, eggs, snowballs) to the dispenser inventory.
 3. Activate the dispenser, through redstone or shooting with an arrow
 
-The dispenser will 
+When placing the dispenser, you will receive a message saying what direction it is facing.
+Projectiles from the dispenser will shoot in this direction.
 
 ## Commands
 "/dispenser [direction]" while looking at a dispenser lets you change or view its direction.
