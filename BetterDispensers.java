@@ -32,10 +32,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.UUID;
-import java.util.Iterator;
 import java.util.logging.Logger;
-import java.util.Formatter;
+import java.util.Random;
 import java.lang.Byte;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -152,9 +150,12 @@ class BetterDispensersOrientTask implements Runnable {
 
 class BetterDispensersListener implements Listener {
     BetterDispensers plugin;
+    Random random;
 
     public BetterDispensersListener(BetterDispensers plugin) {
         this.plugin = plugin;
+
+        this.random = new Random();
 
         Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
     }
@@ -242,14 +243,76 @@ class BetterDispensersListener implements Listener {
             return;
         }
 
-        // shoot arrows outselves
+        // handle dispensing ourselves - see BlockDispenser.java
         event.setCancelled(true);
-        // TODO: we still need to remove arrow from dispenser inventory!
-        // otherwise we dupe arrows
-
         net.minecraft.server.World world = ((CraftWorld)block.getWorld()).getHandle();
         int x = block.getX(), y = block.getY(), z = block.getZ();
 
+        net.minecraft.server.TileEntityDispenser tileEntity = (net.minecraft.server.TileEntityDispenser)world.getTileEntity(x, y, z);
+        if (tileEntity == null) {
+            plugin.log.info("no dispenser tile entity at "+block);
+            return;
+        }
+
+        // Get random item to dispense
+        net.minecraft.server.ItemStack item = tileEntity.k_();   // like MCP getRandomStackFromInventory()
+        plugin.log.info("dispensing item "+item);
+        if (item == null) {
+            world.f(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
+            return;
+        }
+
+        net.minecraft.server.Entity entity = null;
+
+        // Create new entity at center of block face
+        double x0 = x + 0.5;
+        double y0 = y + 0.5 + dy;
+        double z0 = z + 0.5;
+    
+        if (item.id == net.minecraft.server.Item.ARROW.id) {
+            net.minecraft.server.EntityArrow arrow = new net.minecraft.server.EntityArrow(world, x0, y0, z0);
+            arrow.shoot(0, v, 0, 1.1f, 6.0f);
+            arrow.fromPlayer = true;
+            entity = (net.minecraft.server.Entity)arrow;
+        } else if (item.id == net.minecraft.server.Item.EGG.id) {
+            net.minecraft.server.EntityEgg egg = new net.minecraft.server.EntityEgg(world, x0, y0, z0);
+            egg.a(0, v, 0, 1.1f, 6.0f);
+            entity = (net.minecraft.server.Entity)egg;
+        } else if (item.id == net.minecraft.server.Item.SNOW_BALL.id) {
+            net.minecraft.server.EntitySnowball ball = new net.minecraft.server.EntitySnowball(world, x0, y0, z0);
+            ball.a(0, v, 0, 1.1f, 6.0f);
+            entity = (net.minecraft.server.Entity)ball;
+        // TODO: add fire charges for 1.2
+        } else if (item.id == net.minecraft.server.Item.POTION.id && net.minecraft.server.ItemPotion.c(item.getData())) {
+            // splash potion
+            net.minecraft.server.EntityPotion potion = new net.minecraft.server.EntityPotion(world, x0, y0, z0, item.getData());
+            potion.a(0, v, 0, 1.375f, 6.0f);     // why 1.375 not 1.1? because Minecraft
+            entity = (net.minecraft.server.Entity)potion;
+        } else {
+            // non-projectile item
+            net.minecraft.server.EntityItem entityItem = new net.minecraft.server.EntityItem(world, x0, y0 - 0.3d, z0, item);
+
+            double d0 = (double)x + 0.5d;
+            double d1 = (double)y + 0.5d;
+            double d2 = (double)z + 0.5d;
+            double d3 = random.nextDouble() * 0.1d + 0.2d;
+            double motX = d3;
+            double motY = 0.2d;
+            double motZ = d3;
+
+            motX += random.nextGaussian() * 0.0075 * 6.0d;
+            motY += random.nextGaussian() * 0.0075 * 6.0d;
+            motZ += random.nextGaussian() * 0.0075 * 6.0d;
+
+            entity.motX = motX;
+            entity.motY = motY;
+            entity.motZ = motZ;
+
+            entity = (net.minecraft.server.Entity)entityItem;
+        }
+
+
+        /*
         net.minecraft.server.EntityArrow arrow = new net.minecraft.server.EntityArrow(
             world,
             x + 0.5,        // center of block face
@@ -258,7 +321,12 @@ class BetterDispensersListener implements Listener {
         arrow.shoot(0, v, 0, 1.1f, 6.0f);   // up
         arrow.fromPlayer = true;
         world.addEntity(arrow);
-        world.f(1002, x, y, z, 0);  // playAuxSfx - dispenser smoke
+        world.f(1002, x, y, z, 0);  // playAuxSfx 
+        */
+
+        world.addEntity(entity);
+        world.f(1002, x, y, z, 0);  // playAuxSfx 
+        world.f(2000, x, y, z, 4);  // smoke
 
         /*
         block.getRelative(0,1,0).setType(Material.GLASS);
