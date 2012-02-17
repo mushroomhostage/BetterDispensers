@@ -194,9 +194,13 @@ class BetterDispensersListener implements Listener {
 
         // Intelligently set orientation like pistons do
         int l = plugin.determineOrientation(block.getLocation(), player);
-        //player.sendMessage("l="+l);
         if (l != -1) {
             byte data = (byte)l;
+
+            if (plugin.getConfig().getBoolean("tellPlayer", true)) {
+                player.sendMessage("Placed dispenser facing "+plugin.dirToString(data));
+            }
+
 
             Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new BetterDispensersOrientTask(data, block, plugin));
         }
