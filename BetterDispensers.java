@@ -161,7 +161,7 @@ class BetterDispensersListener implements Listener {
     }
 
     // accept arrows inside dispensers
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
     public void onProjectileHit(ProjectileHitEvent event) {
         Entity entity = event.getEntity();
         if (!(entity instanceof Arrow)) {
@@ -175,7 +175,7 @@ class BetterDispensersListener implements Listener {
     }
 
     
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
     public void onBlockPlace(BlockPlaceEvent event) {
         Block block = event.getBlockPlaced();
         if (block.getType() != Material.DISPENSER) {
@@ -198,7 +198,7 @@ class BetterDispensersListener implements Listener {
     }
 
     // handle up/down dispensers
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
     public void onBlockDispense(BlockDispenseEvent event) {
         plugin.log.info("dispense"+event);
         Block block = event.getBlock();
