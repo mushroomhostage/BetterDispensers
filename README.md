@@ -43,3 +43,5 @@ by default since otherwise you can acquire arrows you normally cannot (those sho
 tellPlayer (true): Send a player a message about the dispenser orientation when placed.
 
 verbose (false): Log debugging information to the server console.
+
+***[Fork me on GitHub](https://github.com/mushroomhostage/BetterDispensers)***
