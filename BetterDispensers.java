@@ -84,17 +84,21 @@ class BetterDispensersAcceptTask implements Runnable {
         }
 
         Dispenser dispenser = (Dispenser)blockState;
-
         Inventory inventory = dispenser.getInventory();
 
-        arrow.remove();
+        // Add arrows to inventory, if infinite/finite as configured
+        net.minecraft.server.EntityArrow entityArrow = ((CraftArrow)arrow).getHandle();
+        if (entityArrow.fromPlayer && plugin.getConfig().getBoolean("acceptPlayerArrows", true) ||
+            !entityArrow.fromPlayer && plugin.getConfig().getBoolean("acceptOtherArrows", true)) {
 
-        // TODO: only if not infinite arrow?
-        inventory.addItem(new ItemStack(Material.ARROW, 1));
-        // TODO: detect if full! then don't remove entity
+            HashMap<Integer,ItemStack> excess = inventory.addItem(new ItemStack(Material.ARROW, 1));
+            if (excess.size() == 0) {
+                // successfully added to inventory, so remove entity
+                arrow.remove();
+            }
+        }
 
-        // TODO: configurable
-        if (plugin.getConfig().getBoolean("dispense", true)) {
+        if (plugin.getConfig().getBoolean("dispenseOnHit", true)) {
             dispenser.dispense();
         }
     }
@@ -360,6 +364,10 @@ public class BetterDispensers extends JavaPlugin {
             log.severe("Failed to reflect, automatic orientation disabled: " + e);
             determineOrientationMethod = null;
         }
+
+        getConfig().options().copyDefaults(true);
+        saveConfig();
+        reloadConfig();
     }
 
     public void onDisable() {

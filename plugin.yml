@@ -1,6 +1,6 @@
 name: BetterDispensers
 main: me.exphc.BetterDispensers.BetterDispensers
-version: 0.2
+version: 1.0
 commands:
     dispenser:
         description: Change or view dispenser information
