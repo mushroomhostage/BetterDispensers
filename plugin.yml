@@ -1,5 +1,5 @@
-name: AntiDispenser
-main: me.exphc.AntiDispenser.AntiDispenser
+name: BetterDispensers
+main: me.exphc.BetterDispensers.BetterDispensers
 version: 0.2
 commands:
     dispenser:

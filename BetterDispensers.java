@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package me.exphc.AntiDispenser;
+package me.exphc.BetterDispensers;
 
 import java.util.Collections;
 import java.util.List;
@@ -63,11 +63,11 @@ import org.bukkit.craftbukkit.entity.CraftArrow;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.CraftWorld;
 
-class AntiDispenserAcceptTask implements Runnable {
+class BetterDispensersAcceptTask implements Runnable {
     Arrow arrow;
-    AntiDispenser plugin;
+    BetterDispensers plugin;
 
-    public AntiDispenserAcceptTask(Arrow arrow, AntiDispenser plugin) {
+    public BetterDispensersAcceptTask(Arrow arrow, BetterDispensers plugin) {
         this.arrow = arrow;
         this.plugin = plugin;
     }
@@ -132,12 +132,12 @@ class AntiDispenserAcceptTask implements Runnable {
 }
 
 // Task to set dispenser orientation
-class AntiDispenserOrientTask implements Runnable {
+class BetterDispensersOrientTask implements Runnable {
     byte data;
     Block block;
-    AntiDispenser plugin;
+    BetterDispensers plugin;
 
-    public AntiDispenserOrientTask(byte data, Block block, AntiDispenser plugin) {
+    public BetterDispensersOrientTask(byte data, Block block, BetterDispensers plugin) {
         this.data = data;
         this.block = block;
         this.plugin = plugin;
@@ -150,10 +150,10 @@ class AntiDispenserOrientTask implements Runnable {
     }
 }
 
-class AntiDispenserListener implements Listener {
-    AntiDispenser plugin;
+class BetterDispensersListener implements Listener {
+    BetterDispensers plugin;
 
-    public AntiDispenserListener(AntiDispenser plugin) {
+    public BetterDispensersListener(BetterDispensers plugin) {
         this.plugin = plugin;
 
         Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
@@ -170,7 +170,7 @@ class AntiDispenserListener implements Listener {
         Arrow arrow = (Arrow)entity;
 
         // must schedule a task since arrow collision detection hasn't happened yet
-        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new AntiDispenserAcceptTask(arrow, plugin));
+        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new BetterDispensersAcceptTask(arrow, plugin));
     }
 
     
@@ -192,7 +192,7 @@ class AntiDispenserListener implements Listener {
         if (l != -1) {
             byte data = (byte)l;
 
-            Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new AntiDispenserOrientTask(data, block, plugin));
+            Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new BetterDispensersOrientTask(data, block, plugin));
         }
     }
 
@@ -267,13 +267,13 @@ class AntiDispenserListener implements Listener {
     }
 }
 
-public class AntiDispenser extends JavaPlugin {
+public class BetterDispensers extends JavaPlugin {
     Logger log = Logger.getLogger("Minecraft");
-    AntiDispenserListener listener;
+    BetterDispensersListener listener;
     Method determineOrientationMethod;
 
     public void onEnable() {
-        listener = new AntiDispenserListener(this);
+        listener = new BetterDispensersListener(this);
 
         // Reuse piston orientation determination code since they can face in all directions
         try {
