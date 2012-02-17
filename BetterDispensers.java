@@ -98,7 +98,8 @@ class BetterDispensersAcceptTask implements Runnable {
             }
         }
 
-        if (plugin.getConfig().getBoolean("dispenseOnHit", true)) {
+        if (entityArrow.fromPlayer && plugin.getConfig().getBoolean("dispenseOnPlayerArrowHit", true) ||
+            !entityArrow.fromPlayer && plugin.getConfig().getBoolean("dispenseOnOtherArrowHit", true)) {
             dispenser.dispense();
         }
     }
@@ -126,7 +127,7 @@ class BetterDispensersAcceptTask implements Runnable {
 
             return world.getBlockAt(x, y, z);
         } catch (Exception e) {
-            plugin.log.info("getArrowHit("+arrow+" reflection failed: "+e);
+            plugin.log("getArrowHit("+arrow+" reflection failed: "+e);
             throw new IllegalArgumentException(e);
         }
     }
@@ -189,11 +190,11 @@ class BetterDispensersListener implements Listener {
         Block blockAgainst = event.getBlockAgainst();
         Player player = event.getPlayer();
 
-        plugin.log.info("placed "+block.getLocation()+" by "+player.getLocation());
+        plugin.log("placed "+block.getLocation()+" by "+player.getLocation());
 
         // Intelligently set orientation like pistons do
         int l = plugin.determineOrientation(block.getLocation(), player);
-        player.sendMessage("l="+l);
+        //player.sendMessage("l="+l);
         if (l != -1) {
             byte data = (byte)l;
 
@@ -204,7 +205,7 @@ class BetterDispensersListener implements Listener {
     // handle up/down dispensers
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
     public void onBlockDispense(BlockDispenseEvent event) {
-        plugin.log.info("dispense"+event);
+        plugin.log("dispense"+event);
         Block block = event.getBlock();
         BlockState blockState = block.getState();
         if (!(blockState instanceof Dispenser)) {
@@ -243,7 +244,7 @@ class BetterDispensersListener implements Listener {
             return;
         default:
             // 6-15 unused
-            plugin.log.info("unknown data value "+data);
+            plugin.log("unknown data value "+data);
             return;
         }
 
@@ -254,13 +255,13 @@ class BetterDispensersListener implements Listener {
 
         net.minecraft.server.TileEntityDispenser tileEntity = (net.minecraft.server.TileEntityDispenser)world.getTileEntity(x, y, z);
         if (tileEntity == null) {
-            plugin.log.info("no dispenser tile entity at "+block);
+            plugin.log("no dispenser tile entity at "+block);
             return;
         }
 
         // Get random item to dispense
         net.minecraft.server.ItemStack item = tileEntity.k_();   // like MCP getRandomStackFromInventory()
-        plugin.log.info("dispensing item "+item);
+        plugin.log("dispensing item "+item);
         if (item == null) {
             world.f(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
             return;
@@ -463,6 +464,12 @@ public class BetterDispensers extends JavaPlugin {
         case 4: return "west";
         case 5: return "east";
         default: return "unknown";
+        }
+    }
+
+    public void log(String message) {
+        if (getConfig().getBoolean("verbose", true)) {
+            log.info(message);
         }
     }
 }
