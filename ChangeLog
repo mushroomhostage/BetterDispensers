@@ -1,5 +1,6 @@
 2012-02-18  1.1
     * Fix NPE dispensing non-projectile items vertically
+    * Change verbose config option default to false
 
 2012-02-16  1.0
     * Initial release
