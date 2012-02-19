@@ -314,9 +314,9 @@ class BetterDispensersListener implements Listener {
             motY += random.nextGaussian() * 0.0075 * 6.0d;
             motZ += random.nextGaussian() * 0.0075 * 6.0d;
 
-            entity.motX = motX;
-            entity.motY = motY;
-            entity.motZ = motZ;
+            entityItem.motX = motX;
+            entityItem.motY = motY;
+            entityItem.motZ = motZ;
 
             entity = (net.minecraft.server.Entity)entityItem;
         }
