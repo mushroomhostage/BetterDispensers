@@ -23,6 +23,8 @@ on /r/minecraft asking for these features. See also the
 When placing the dispenser, you will receive a message saying what direction it is facing.
 Projectiles from the dispenser will shoot in this direction.
 
+[Plugin Showcase video from WoopaGaming](http://www.youtube.com/watch?v=ZkNV41VP9T4)
+
 ## Commands
 "/dispenser [direction]" while looking at a dispenser lets you change or view its direction.
 Requires betterdispensers.command permission.
