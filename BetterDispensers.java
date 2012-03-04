@@ -267,7 +267,7 @@ class BetterDispensersListener implements Listener {
         net.minecraft.server.ItemStack item = tileEntity.k_();   // like MCP getRandomStackFromInventory()
         plugin.log("dispensing item "+item);
         if (item == null) {
-            world.f(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
+            world.triggerEffect(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
             return;
         }
 
@@ -331,12 +331,12 @@ class BetterDispensersListener implements Listener {
         arrow.shoot(0, v, 0, 1.1f, 6.0f);   // up
         arrow.fromPlayer = true;
         world.addEntity(arrow);
-        world.f(1002, x, y, z, 0);  // playAuxSfx 
+        world.triggerEffect(1002, x, y, z, 0);  // playAuxSfx 
         */
 
         world.addEntity(entity);
-        world.f(1002, x, y, z, 0);  // playAuxSfx 
-        world.f(2000, x, y, z, 4);  // smoke
+        world.triggerEffect(1002, x, y, z, 0);  // playAuxSfx 
+        world.triggerEffect(2000, x, y, z, 4);  // smoke
 
         /*
         block.getRelative(0,1,0).setType(Material.GLASS);
