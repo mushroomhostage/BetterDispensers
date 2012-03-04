@@ -291,6 +291,14 @@ class BetterDispensersListener implements Listener {
             net.minecraft.server.EntitySnowball ball = new net.minecraft.server.EntitySnowball(world, x0, y0, z0);
             ball.a(0, v, 0, 1.1f, 6.0f);
             entity = (net.minecraft.server.Entity)ball;
+
+        /* TODO: add TNT cannons (optional)
+        not as simple as others, because TNTPrimed isn't a Projectile.. so can't use a()
+        } else if (item.id == net.minecraft.server.Block.TNT.id && plugin.getConfig().getBoolean("primeTNT", false)) {
+            net.minecraft.server.EntityTNTPrimed tnt = new net.minecraft.server.EntityTNTPrimed(world, x0, y0, z0);
+            tnt.a(0, v, 0, 1.1f, 6.0f);
+            entity = (net.minecraft.server.Entity)tnt;
+        */
         // TODO: add fire charges for 1.2
         // TODO: add spawn eggs!
         } else if (item.id == net.minecraft.server.Item.POTION.id && net.minecraft.server.ItemPotion.c(item.getData())) {
