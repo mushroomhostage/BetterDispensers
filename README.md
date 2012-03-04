@@ -6,7 +6,7 @@ With BetterDispensers you can:
 * Activate dispensers when they are hit by arrows (optional)
 * Add arrows to dispenser inventory when hit by arrows (optional)
 
-***[Download 1.1 here](http://dev.bukkit.org/server-mods/betterdispensers/files/2-better-dispensers-1-1/)***
+***[Download 1.1.1 here](http://dev.bukkit.org/server-mods/betterdispensers/files/3-better-dispensers-1-1-1/)*** - updated for 1.1-R6
 
 BetterDispensers was inspired by 
 [a post](http://www.reddit.com/r/Minecraft/comments/pp5bm/dispensers_should_be_able_to_point_straight_up/)
