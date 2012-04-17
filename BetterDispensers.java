@@ -241,16 +241,6 @@ class BetterDispensersListener implements Listener {
         return functions;
     }
 
-    class FakeContainer extends net.minecraft.server.Container {
-        public boolean b(net.minecraft.server.EntityHuman entityhuman) {
-            return false;
-        }
-
-        public InventoryView getBukkitView() {
-            return null;
-        }
-    }
-
     // handle up/down dispensers
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
     public void onBlockDispense(BlockDispenseEvent event) {
@@ -304,6 +294,7 @@ class BetterDispensersListener implements Listener {
         }
 
         if ((functions & FUNCTION_CRAFTER) != 0) {
+            // Craft dispenser matrix into crafting matrix
             ItemStack[] contents = dispenser.getInventory().getContents();
 
             net.minecraft.server.PlayerInventory playerInventory = new net.minecraft.server.PlayerInventory(null);
@@ -311,6 +302,7 @@ class BetterDispensersListener implements Listener {
             net.minecraft.server.ContainerDispenser container = new net.minecraft.server.ContainerDispenser(playerInventory, tileEntity);
 
             net.minecraft.server.InventoryCrafting matrix = new net.minecraft.server.InventoryCrafting(container, 3, 3);
+            matrix.resultInventory = new net.minecraft.server.InventoryCraftResult();
 
             for (int i = 0; i < contents.length; i += 1) {
                 if (contents[i] != null) {
@@ -318,9 +310,12 @@ class BetterDispensersListener implements Listener {
                 }
             }
 
-            net.minecraft.server.ItemStack result = net.minecraft.server.CraftingManager.getInstance().craft(matrix);
+            net.minecraft.server.ItemStack resultNms = net.minecraft.server.CraftingManager.getInstance().craft(matrix);
+
+            ItemStack result= new CraftItemStack(resultNms);
 
             plugin.log("CRAFT: " + result);
+            // TODO: dispense!
         }
  
         if (useStandard) {
