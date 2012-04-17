@@ -88,21 +88,35 @@ class BetterDispensersAcceptTask implements Runnable {
         Dispenser dispenser = (Dispenser)blockState;
         Inventory inventory = dispenser.getInventory();
 
-        // Add arrows to inventory, if infinite/finite as configured
-        net.minecraft.server.EntityArrow entityArrow = ((CraftArrow)arrow).getHandle();
-        if (entityArrow.fromPlayer && plugin.getConfig().getBoolean("acceptPlayerArrows", true) ||
-            !entityArrow.fromPlayer && plugin.getConfig().getBoolean("acceptOtherArrows", true)) {
+        int functions = BetterDispensersListener.getDispenserFunctions(block);
 
-            HashMap<Integer,ItemStack> excess = inventory.addItem(new ItemStack(Material.ARROW, 1));
-            if (excess.size() == 0) {
-                // successfully added to inventory, so remove entity
-                arrow.remove();
+        net.minecraft.server.EntityArrow entityArrow = ((CraftArrow)arrow).getHandle();
+
+        if ((functions & BetterDispensersListener.FUNCTION_ACTIVATOR) != 0) {
+            // TODO: option to always enable, for compatibility with 1.x
+
+            // Activates when hit with arrows
+            if (entityArrow.fromPlayer && plugin.getConfig().getBoolean("activator.enablePlayerArrows", true) ||
+                !entityArrow.fromPlayer && plugin.getConfig().getBoolean("activator.enableNonPlayerArrows", true)) {
+                dispenser.dispense();
             }
         }
 
-        if (entityArrow.fromPlayer && plugin.getConfig().getBoolean("dispenseOnPlayerArrowHit", true) ||
-            !entityArrow.fromPlayer && plugin.getConfig().getBoolean("dispenseOnOtherArrowHit", true)) {
-            dispenser.dispense();
+        if ((functions & BetterDispensersListener.FUNCTION_VACUUM) != 0) {
+            // TODO: option to always enable, for compatibility with 1.x
+
+            // Add arrows to inventory, if infinite/finite as configured
+            if (entityArrow.fromPlayer && plugin.getConfig().getBoolean("vacuum.enablePlayerArrows", true) ||
+                !entityArrow.fromPlayer && plugin.getConfig().getBoolean("vacuum.enableNonPlayerArrows", false)) {
+
+                HashMap<Integer,ItemStack> excess = inventory.addItem(new ItemStack(Material.ARROW, 1));
+                if (excess.size() == 0) {
+                    // successfully added to inventory, so remove entity
+                    arrow.remove();
+                }
+            }
+
+            // TODO: accept other items! on drop, or item spawn? for Buildcraft-like transport
         }
     }
 
@@ -159,13 +173,26 @@ class BetterDispensersListener implements Listener {
     BetterDispensers plugin;
     Random random;
 
+    net.minecraft.server.EntityPlayer fakePlayer;
+
     public BetterDispensersListener(BetterDispensers plugin) {
         this.plugin = plugin;
 
         this.random = new Random();
 
+        net.minecraft.server.MinecraftServer console = ((CraftServer)Bukkit.getServer()).getServer();
+        net.minecraft.server.ItemInWorldManager manager = new net.minecraft.server.ItemInWorldManager(console.getWorldServer(0));
+
+        fakePlayer = new net.minecraft.server.EntityPlayer(
+            console,
+            ((CraftWorld)Bukkit.getWorlds().get(0)).getHandle(), // TODO: does it need to be in each world?
+            "[BetterDispensers]",
+            manager);
+
+
         Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
     }
+
 
     // accept arrows inside dispensers
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
@@ -208,14 +235,14 @@ class BetterDispensersListener implements Listener {
         }
     }
 
-    final int FUNCTION_CRAFTER    = 1 << 0;
-    final int FUNCTION_DEPLOYER   = 1 << 1;
-    final int FUNCTION_BREAKER    = 1 << 2;
-    final int FUNCTION_ACTIVATOR  = 1 << 3;
-    final int FUNCTION_VACUUM     = 1 << 4;
-    final int FUNCTION_STORAGE    = 1 << 5;
+    public static final int FUNCTION_CRAFTER    = 1 << 0;
+    public static final int FUNCTION_DEPLOYER   = 1 << 1;
+    public static final int FUNCTION_BREAKER    = 1 << 2;
+    public static final int FUNCTION_ACTIVATOR  = 1 << 3;
+    public static final int FUNCTION_VACUUM     = 1 << 4;
+    public static final int FUNCTION_STORAGE    = 1 << 5;
 
-    private int getDispenserFunctions(Block origin) {
+    public static int getDispenserFunctions(Block origin) {
         int functions = 0;
 
         BlockFace[] directions = { 
@@ -333,30 +360,37 @@ class BetterDispensersListener implements Listener {
             // TODO: take tool damage if is a tool, instead of removing!
             item = tileEntity.splitStack(slot, 1);
 
-            net.minecraft.server.MinecraftServer console = ((CraftServer)Bukkit.getServer()).getServer();
-            net.minecraft.server.ItemInWorldManager manager = new net.minecraft.server.ItemInWorldManager(console.getWorldServer(0));
-
-            net.minecraft.server.EntityPlayer fakePlayer = new net.minecraft.server.EntityPlayer(
-                console,
-                world,
-                "[BetterDispensers]",
-                manager);
-
-            int l = 0; // face
+            int face = 0;    // TODO: top?
 
             // TODO: use actual direction! and have a reach, like player!
-            plugin.log("DEPLOY at "+x+","+y+","+(z+1));
+            int ax = x, ay = y, az = z+1;
+            plugin.log("DEPLOY at "+ax+","+ay+","+az);
 
-            net.minecraft.server.Item.byId[item.id].interactWith(item, fakePlayer, world, x, y, z+1, l);
+            net.minecraft.server.Item.byId[item.id].interactWith(item, fakePlayer, world, ax, ay, az, face);
 
-            Block b = Bukkit.getWorlds().get(0).getBlockAt(x,y,z);
+            Block b = Bukkit.getWorlds().get(0).getBlockAt(ax,ay,az); 
             plugin.log("block "+b);
 
             // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
 
             event.setCancelled(true);
             return;
+        } else if ((functions & FUNCTION_BREAKER) != 0) {
+            int slot = tileEntity.findDispenseSlot();
 
+            tileEntity.getItem(slot).damage(1, fakePlayer);
+
+            // TODO: use actual direction! and same reach as player, like deployer
+            int ax = x, ay = y, az = z+1;
+
+            Block b = Bukkit.getWorlds().get(0).getBlockAt(ax,ay,az);   // TODO: multi-world support!
+            plugin.log("block "+b);
+            // TODO: can this send block break events, so plugins (like EnchantMore) can handle the break?
+            // and, it should respect world protection too.. (with fake user)
+            b.breakNaturally(new CraftItemStack(tileEntity.getItem(slot)));
+
+            event.setCancelled(true);
+            return;
         } else {
             // Take one from random slot
             int slot = tileEntity.findDispenseSlot();
