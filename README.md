@@ -6,6 +6,8 @@ With BetterDispensers you can:
 * Activate dispensers when they are hit by arrows (optional)
 * Add arrows to dispenser inventory when hit by arrows (optional)
 
+**[Download BetterDispensers 1.2](http://dev.bukkit.org/server-mods/betterdispensers/files/4-better-dispensers-1-2/)** - released 2012/04/16 for 1.2.5
+
 ## Usage
 ***[Screenshots and tutorial](http://imgur.com/a/56DoO)***
 
@@ -16,7 +18,7 @@ With BetterDispensers you can:
 When placing the dispenser, you will receive a message saying what direction it is facing.
 Projectiles from the dispenser will shoot in this direction.
 
-[Plugin Showcase video from WoopaGaming](http://www.youtube.com/watch?v=ZkNV41VP9T4)
+[Plugin Showcase video from WoopaGaming (v1.1)](http://www.youtube.com/watch?v=ZkNV41VP9T4)
 
 ## Commands
 "/dispenser [direction]" while looking at a dispenser lets you change or view its direction.
