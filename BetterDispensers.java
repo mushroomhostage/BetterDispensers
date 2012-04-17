@@ -267,23 +267,7 @@ class BetterDispensersListener implements Listener {
         int functions = getDispenserFunctions(block);
         plugin.log("functions="+functions);
 
-        if ((functions & FUNCTION_CRAFTER) != 0) {
-            ItemStack[] contents = dispenser.getInventory().getContents();
-
-            net.minecraft.server.Container container = new FakeContainer();
-
-            net.minecraft.server.InventoryCrafting matrix = new net.minecraft.server.InventoryCrafting(container, 3, 3);
-
-            for (int i = 0; i < contents.length; i += 1) {
-                if (contents[i] != null) {
-                    matrix.setItem(i, ((CraftItemStack)contents[i]).getHandle());
-                }
-            }
-
-            net.minecraft.server.ItemStack result = net.minecraft.server.CraftingManager.getInstance().craft(matrix);
-
-            plugin.log("CRAFT: " + result);
-        }
+        boolean useStandard = false;
        
         byte data = blockState.getRawData();
         int v;
@@ -302,15 +286,14 @@ class BetterDispensersListener implements Listener {
         case 4:     // west
         case 5:     // east
             // standard directions
-            return;
+            useStandard = true;
+            //return;
         default:
             // 6-15 unused
             plugin.log("unknown data value "+data);
             return;
         }
 
-        // handle dispensing ourselves - see BlockDispenser.java
-        event.setCancelled(true);
         net.minecraft.server.World world = ((CraftWorld)block.getWorld()).getHandle();
         int x = block.getX(), y = block.getY(), z = block.getZ();
 
@@ -319,6 +302,34 @@ class BetterDispensersListener implements Listener {
             plugin.log("no dispenser tile entity at "+block);
             return;
         }
+
+        if ((functions & FUNCTION_CRAFTER) != 0) {
+            ItemStack[] contents = dispenser.getInventory().getContents();
+
+            net.minecraft.server.PlayerInventory playerInventory = new net.minecraft.server.PlayerInventory(null);
+
+            net.minecraft.server.ContainerDispenser container = new net.minecraft.server.ContainerDispenser(playerInventory, tileEntity);
+
+            net.minecraft.server.InventoryCrafting matrix = new net.minecraft.server.InventoryCrafting(container, 3, 3);
+
+            for (int i = 0; i < contents.length; i += 1) {
+                if (contents[i] != null) {
+                    matrix.setItem(i, ((CraftItemStack)contents[i]).getHandle());
+                }
+            }
+
+            net.minecraft.server.ItemStack result = net.minecraft.server.CraftingManager.getInstance().craft(matrix);
+
+            plugin.log("CRAFT: " + result);
+        }
+ 
+        if (useStandard) {
+            // TODO: do it ourselves anyways
+            return;
+        }
+        
+        // handle dispensing ourselves - see BlockDispenser.java
+        event.setCancelled(true);
 
         // Get random item to dispense
         // TODO: should we use unobfuscated tileEntity.findDispenseSlot()?
