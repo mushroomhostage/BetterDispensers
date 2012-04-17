@@ -315,6 +315,13 @@ class BetterDispensersListener implements Listener {
             // Dispense crafting result
             item = net.minecraft.server.CraftingManager.getInstance().craft(matrix);
 
+            if (item == null) {
+                // not a craftable recipe
+                world.triggerEffect(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
+                event.setCancelled(true);
+                return;
+            }
+
             plugin.log("CRAFT: " + item);
 
             // Take one from all slots
