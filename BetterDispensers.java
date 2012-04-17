@@ -300,13 +300,23 @@ class BetterDispensersListener implements Listener {
             tnt.a(0, v, 0, 1.1f, 6.0f);
             entity = (net.minecraft.server.Entity)tnt;
         */
-        // TODO: add fire charges for 1.2
-        // TODO: add spawn eggs!
         } else if (item.id == net.minecraft.server.Item.POTION.id && net.minecraft.server.ItemPotion.c(item.getData())) {
             // splash potion
             net.minecraft.server.EntityPotion potion = new net.minecraft.server.EntityPotion(world, x0, y0, z0, item.getData());
             potion.a(0, v, 0, 1.375f, 6.0f);     // why 1.375 not 1.1? because Minecraft
             entity = (net.minecraft.server.Entity)potion;
+        } else if (item.id == net.minecraft.server.Item.EXP_BOTTLE.id) {
+            net.minecraft.server.EntityThrownExpBottle bottle = new net.minecraft.server.EntityThrownExpBottle(world, x0, y0, z0);
+            bottle.a(0, v, 0, 1.1f, 6.0f);
+            entity = (net.minecraft.server.Entity)bottle;
+        } else if (item.id == net.minecraft.server.Item.MONSTER_EGG.id) {
+            net.minecraft.server.ItemMonsterEgg.a(world, item.getData(), x0, y0, z0);
+            // not thrown
+            entity = null;
+        } else if (item.id == net.minecraft.server.Item.FIREBALL.id) {
+            // TODO: doesn't seem to work right.. figure out the other parameters
+            net.minecraft.server.EntitySmallFireball fire = new net.minecraft.server.EntitySmallFireball(world, x0, y0, z0, 0, 0, 0);
+            entity = (net.minecraft.server.Entity)fire;
         } else {
             // non-projectile item
             net.minecraft.server.EntityItem entityItem = new net.minecraft.server.EntityItem(world, x0, y0 - 0.3d, z0, item);
@@ -330,27 +340,12 @@ class BetterDispensersListener implements Listener {
             entity = (net.minecraft.server.Entity)entityItem;
         }
 
+        if (entity != null) {
+            world.addEntity(entity);
+        }
 
-        /*
-        net.minecraft.server.EntityArrow arrow = new net.minecraft.server.EntityArrow(
-            world,
-            x + 0.5,        // center of block face
-            y + 0.5 + dy,
-            z + 0.5);
-        arrow.shoot(0, v, 0, 1.1f, 6.0f);   // up
-        arrow.fromPlayer = true;
-        world.addEntity(arrow);
-        world.triggerEffect(1002, x, y, z, 0);  // playAuxSfx 
-        */
-
-        world.addEntity(entity);
         world.triggerEffect(1002, x, y, z, 0);  // playAuxSfx 
         world.triggerEffect(2000, x, y, z, 4);  // smoke
-
-        /*
-        block.getRelative(0,1,0).setType(Material.GLASS);
-        block.getWorld().spawnArrow(block.getRelative(0,2,0).getLocation(), new Vector(0,1,0), 10, 0);
-        */
     }
 }
 
