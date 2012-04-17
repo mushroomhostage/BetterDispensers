@@ -61,6 +61,7 @@ import org.bukkit.craftbukkit.entity.CraftArrow;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.CraftServer;
 
 class BetterDispensersAcceptTask implements Runnable {
     Arrow arrow;
@@ -210,7 +211,7 @@ class BetterDispensersListener implements Listener {
     final int FUNCTION_CRAFTER    = 1 << 0;
     final int FUNCTION_DEPLOYER   = 1 << 1;
     final int FUNCTION_BREAKER    = 1 << 2;
-    final int FUNCTION_ACTIVATOR  = 1 << 4;
+    final int FUNCTION_ACTIVATOR  = 1 << 3;
     final int FUNCTION_VACUUM     = 1 << 4;
     final int FUNCTION_STORAGE    = 1 << 5;
 
@@ -257,8 +258,6 @@ class BetterDispensersListener implements Listener {
         int functions = getDispenserFunctions(block);
         plugin.log("functions="+functions);
 
-        boolean useStandard = false;
-       
         byte data = blockState.getRawData();
         int v;
         double dy;
@@ -276,8 +275,8 @@ class BetterDispensersListener implements Listener {
         case 4:     // west
         case 5:     // east
             // standard directions
-            useStandard = true;
-            //return;
+            // TODO: handle these ourselves!
+            return;
         default:
             // 6-15 unused
             plugin.log("unknown data value "+data);
@@ -328,15 +327,39 @@ class BetterDispensersListener implements Listener {
             for (int i = 0; i < contents.length; i += 1) {
                 tileEntity.splitStack(i, 1);
             }
+        } else if ((functions & FUNCTION_DEPLOYER) != 0) {
+            // Use item, i.e., like right-clicking hoe tills
+            int slot = tileEntity.findDispenseSlot();
+            // TODO: take tool damage if is a tool, instead of removing!
+            item = tileEntity.splitStack(slot, 1);
+
+            net.minecraft.server.MinecraftServer console = ((CraftServer)Bukkit.getServer()).getServer();
+            net.minecraft.server.ItemInWorldManager manager = new net.minecraft.server.ItemInWorldManager(console.getWorldServer(0));
+
+            net.minecraft.server.EntityPlayer fakePlayer = new net.minecraft.server.EntityPlayer(
+                console,
+                world,
+                "[BetterDispensers]",
+                manager);
+
+            int l = 0; // face
+
+            // TODO: use actual direction! and have a reach, like player!
+            plugin.log("DEPLOY at "+x+","+y+","+(z+1));
+
+            net.minecraft.server.Item.byId[item.id].interactWith(item, fakePlayer, world, x, y, z+1, l);
+
+            Block b = Bukkit.getWorlds().get(0).getBlockAt(x,y,z);
+            plugin.log("block "+b);
+
+            // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
+
+            event.setCancelled(true);
+            return;
 
         } else {
             // Take one from random slot
             int slot = tileEntity.findDispenseSlot();
-
-            if (useStandard) {
-                // TODO: do it ourselves anyways
-                return;
-            }
 
             item = tileEntity.splitStack(slot, 1);
         }
