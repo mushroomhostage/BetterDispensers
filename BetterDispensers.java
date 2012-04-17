@@ -436,7 +436,12 @@ public class BetterDispensers extends JavaPlugin {
 
         if (args.length > 0) {
             // change direction
-            data = stringToDir(args[0]);
+            try {
+                data = stringToDir(args[0]);
+            } catch (IllegalArgumentException e) {
+                sender.sendMessage(e.getMessage());
+                return true;
+            }
         }
 
         // 0,1,6+ = no front texture, always fire west
