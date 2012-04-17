@@ -206,6 +206,40 @@ class BetterDispensersListener implements Listener {
         }
     }
 
+    final int FUNCTION_CRAFTER    = 1 << 0;
+    final int FUNCTION_DEPLOYER   = 1 << 1;
+    final int FUNCTION_BREAKER    = 1 << 2;
+    final int FUNCTION_ACTIVATOR  = 1 << 4;
+    final int FUNCTION_VACUUM     = 1 << 4;
+    final int FUNCTION_STORAGE    = 1 << 5;
+
+    private int getDispenserFunctions(Block origin) {
+        int functions = 0;
+
+        BlockFace[] directions = { 
+            BlockFace.NORTH,
+            BlockFace.EAST,
+            BlockFace.SOUTH,
+            BlockFace.WEST,
+            BlockFace.UP,
+            BlockFace.DOWN };
+
+        for (BlockFace direction: directions) {
+            Block near = origin.getRelative(direction);
+
+            switch(near.getTypeId()) {
+            case 58 /* crafting table */:   functions |= FUNCTION_CRAFTER; break;
+            case 22 /* lapis block */:      functions |= FUNCTION_DEPLOYER; break;
+            case 42 /* block of iron */:    functions |= FUNCTION_BREAKER; break;
+            case 41 /* block of gold */:    functions |= FUNCTION_ACTIVATOR; break;
+            case 49 /* obsidian */:         functions |= FUNCTION_VACUUM; break;
+            case 54 /* chest */:            functions |= FUNCTION_STORAGE; break;
+            }
+        }
+
+        return functions;
+    }
+
     // handle up/down dispensers
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
     public void onBlockDispense(BlockDispenseEvent event) {
@@ -215,19 +249,12 @@ class BetterDispensersListener implements Listener {
         if (!(blockState instanceof Dispenser)) {
             return;
         }
+
+        int functions = getDispenserFunctions(block);
+        plugin.log("functions="+functions);
         
         Dispenser dispenser = (Dispenser)blockState;
        
-        // velocity from event doesn't change arrows
-        // see BlockDispenser.java, special cases for projectiles, do not take into account motX/Y/Z
-        //event.setVelocity(new Vector(0, 1, 0));
-        //event.setItem(new ItemStack(Material.SNOW, 1)); 
-        /*
-        ItemStack item = event.getItem();
-        if (item.getType() != Material.ARROW) {
-            return;
-        }*/
-
         byte data = blockState.getRawData();
         int v;
         double dy;
