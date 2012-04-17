@@ -264,7 +264,8 @@ class BetterDispensersListener implements Listener {
         }
 
         // Get random item to dispense
-        net.minecraft.server.ItemStack item = tileEntity.k_();   // like MCP getRandomStackFromInventory()
+        // TODO: should we use unobfuscated tileEntity.findDispenseSlot()?
+        net.minecraft.server.ItemStack item = tileEntity.p_();   // like MCP getRandomStackFromInventory()
         plugin.log("dispensing item "+item);
         if (item == null) {
             world.triggerEffect(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
