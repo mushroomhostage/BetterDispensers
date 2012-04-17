@@ -59,6 +59,7 @@ import org.bukkit.*;
 
 import org.bukkit.craftbukkit.entity.CraftArrow;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.CraftWorld;
 
 class BetterDispensersAcceptTask implements Runnable {
@@ -240,6 +241,16 @@ class BetterDispensersListener implements Listener {
         return functions;
     }
 
+    class FakeContainer extends net.minecraft.server.Container {
+        public boolean b(net.minecraft.server.EntityHuman entityhuman) {
+            return false;
+        }
+
+        public InventoryView getBukkitView() {
+            return null;
+        }
+    }
+
     // handle up/down dispensers
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
     public void onBlockDispense(BlockDispenseEvent event) {
@@ -250,10 +261,29 @@ class BetterDispensersListener implements Listener {
             return;
         }
 
+       
+        Dispenser dispenser = (Dispenser)blockState;
+
         int functions = getDispenserFunctions(block);
         plugin.log("functions="+functions);
-        
-        Dispenser dispenser = (Dispenser)blockState;
+
+        if ((functions & FUNCTION_CRAFTER) != 0) {
+            ItemStack[] contents = dispenser.getInventory().getContents();
+
+            net.minecraft.server.Container container = new FakeContainer();
+
+            net.minecraft.server.InventoryCrafting matrix = new net.minecraft.server.InventoryCrafting(container, 3, 3);
+
+            for (int i = 0; i < contents.length; i += 1) {
+                if (contents[i] != null) {
+                    matrix.setItem(i, ((CraftItemStack)contents[i]).getHandle());
+                }
+            }
+
+            net.minecraft.server.ItemStack result = net.minecraft.server.CraftingManager.getInstance().craft(matrix);
+
+            plugin.log("CRAFT: " + result);
+        }
        
         byte data = blockState.getRawData();
         int v;
