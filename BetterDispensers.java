@@ -293,6 +293,8 @@ class BetterDispensersListener implements Listener {
             return;
         }
 
+        net.minecraft.server.ItemStack item;
+
         if ((functions & FUNCTION_CRAFTER) != 0) {
             // Craft dispenser matrix into crafting matrix
             ItemStack[] contents = dispenser.getInventory().getContents();
@@ -310,25 +312,33 @@ class BetterDispensersListener implements Listener {
                 }
             }
 
-            net.minecraft.server.ItemStack resultNms = net.minecraft.server.CraftingManager.getInstance().craft(matrix);
+            // Dispense crafting result
+            item = net.minecraft.server.CraftingManager.getInstance().craft(matrix);
 
-            ItemStack result= new CraftItemStack(resultNms);
+            plugin.log("CRAFT: " + item);
 
-            plugin.log("CRAFT: " + result);
-            // TODO: dispense!
-        }
- 
-        if (useStandard) {
-            // TODO: do it ourselves anyways
-            return;
+            // Take one from all slots
+            for (int i = 0; i < contents.length; i += 1) {
+                tileEntity.splitStack(i, 1);
+            }
+
+        } else {
+            // Take one from random slot
+            int slot = tileEntity.findDispenseSlot();
+
+            if (useStandard) {
+                // TODO: do it ourselves anyways
+                return;
+            }
+
+            item = tileEntity.splitStack(slot, 1);
         }
         
         // handle dispensing ourselves - see BlockDispenser.java
         event.setCancelled(true);
 
-        // Get random item to dispense
-        // TODO: should we use unobfuscated tileEntity.findDispenseSlot()?
-        net.minecraft.server.ItemStack item = tileEntity.p_();   // like MCP getRandomStackFromInventory()
+        // Take random item to dispense
+
         plugin.log("dispensing item "+item);
         if (item == null) {
             world.triggerEffect(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
