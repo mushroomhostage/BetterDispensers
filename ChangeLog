@@ -1,3 +1,8 @@
+2012-04-16  1.2
+    * Update for CraftBukkit 1.2.5-R1.0
+    * Add spawn egg, bottle o' enchanting, and fire charge vertical dispensing
+    * Fix internal error when using /disp with invalid direction
+
 2012-03-03  1.1.1
     * Update for CraftBukkit 1.1-R6
 

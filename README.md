@@ -6,13 +6,6 @@ With BetterDispensers you can:
 * Activate dispensers when they are hit by arrows (optional)
 * Add arrows to dispenser inventory when hit by arrows (optional)
 
-***[Download 1.1.1 here](http://dev.bukkit.org/server-mods/betterdispensers/files/3-better-dispensers-1-1-1/)*** - updated for 1.1-R6
-
-BetterDispensers was inspired by 
-[a post](http://www.reddit.com/r/Minecraft/comments/pp5bm/dispensers_should_be_able_to_point_straight_up/)
-on /r/minecraft asking for these features. See also the
-[official BetterDispensers reddit submission](http://www.reddit.com/r/Minecraft/comments/ptgv2/sure_ill_mod_that_for_you_dispensers_can_face/).
-
 ## Usage
 ***[Screenshots and tutorial](http://imgur.com/a/56DoO)***
 
@@ -45,5 +38,12 @@ by default since otherwise you can acquire arrows you normally cannot (those sho
 tellPlayer (true): Send a player a message about the dispenser orientation when placed.
 
 verbose (false): Log debugging information to the server console.
+
+## See also
+BetterDispensers was inspired by 
+[a post](http://www.reddit.com/r/Minecraft/comments/pp5bm/dispensers_should_be_able_to_point_straight_up/)
+on /r/minecraft asking for these features. Also see the
+[official BetterDispensers reddit submission](http://www.reddit.com/r/Minecraft/comments/ptgv2/sure_ill_mod_that_for_you_dispensers_can_face/).
+
 
 ***[Fork me on GitHub](https://github.com/mushroomhostage/BetterDispensers)***
