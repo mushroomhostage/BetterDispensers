@@ -29,6 +29,7 @@ package me.exphc.BetterDispensers;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
@@ -183,7 +184,6 @@ class BetterDispensersListener implements Listener {
             BlockFace.WEST,
             BlockFace.UP,
             BlockFace.DOWN };
-    ConcurrentHashMap<Player, BlockState> lastInteractedBlock;
 
     // Player for performing actions from the dispenser
     net.minecraft.server.EntityPlayer fakePlayer;
@@ -195,8 +195,6 @@ class BetterDispensersListener implements Listener {
 
         this.random = new Random();
 
-        this.lastInteractedBlock = new ConcurrentHashMap<Player, BlockState>();
-        
         net.minecraft.server.MinecraftServer console = ((CraftServer)Bukkit.getServer()).getServer();
         net.minecraft.server.ItemInWorldManager manager = new net.minecraft.server.ItemInWorldManager(console.getWorldServer(0));
 
@@ -501,24 +499,7 @@ class BetterDispensersListener implements Listener {
         world.triggerEffect(2000, x, y, z, 4);  // smoke
     }
 
-    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
-    public void onPlayerInteract(PlayerInteractEvent event) {
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
-            return;
-        }
-
-        Block block = event.getClickedBlock();
-        if (block == null) {
-            return;
-        }
-
-        Player player = event.getPlayer();
-
-        // Record the most recent right-clicked block from the player, so the inventory open
-        // event can tell what crafting table was opened
-        lastInteractedBlock.put(player, block.getState());
-    }
-
+    // Show dispenser inventory when opening adjacent crafting table
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
     public void onInventoryOpen(InventoryOpenEvent event) {
         InventoryView view = event.getView();
@@ -526,8 +507,6 @@ class BetterDispensersListener implements Listener {
         if (view.getType() != InventoryType.WORKBENCH) {
             return;
         }
-
-        plugin.log.info("open crafting");
 
         Inventory inventory = event.getInventory();
         InventoryHolder holder = inventory.getHolder();
@@ -539,17 +518,46 @@ class BetterDispensersListener implements Listener {
 
         Player player = (Player)holder;
 
-        plugin.log.info("target block: " + player.getTargetBlock(null, 100));
-        plugin.log.info("last interacted with: " + lastInteractedBlock.get(player));
+        // Find clicked crafting table
+        Block workbenchBlock = player.getTargetBlock(null, 100);
+        if (workbenchBlock == null) {
+            plugin.log.info("workbench open without target block: " + workbenchBlock);
+            return;
+            // we don't actually check if its a workbench.. might differ due to lag?
+        }
 
-        // TODO: get the workbench block, so we can look around it
+        Block dispenserBlock = null;
 
-        /*
+        // Find adjacent dispenser
         for (BlockFace direction: surfaceDirections) {
-            Block near = workbench.getRelative(direction);
+            Block near = workbenchBlock.getRelative(direction);
 
-            int id = near.getTypeId();
-            */
+            if (near.getType() == Material.DISPENSER) {
+                dispenserBlock = near;
+                break;
+            }
+        }
+
+        if (dispenserBlock == null) {
+            // just an ordinary crafting table
+            return;
+        }
+
+        // Connected to a dispenser
+        BlockState state = dispenserBlock.getState();
+        if (!(state instanceof Dispenser)) {
+            plugin.log.info("not a dispenser: " + state);
+            return;
+        }
+
+        Dispenser dispenser = (Dispenser)state;
+
+        // Copy dispenser inventory to crafting table
+        // Note first slot is crafting result, which we ignore
+        for (int i = 0; i < dispenser.getInventory().getSize(); i += 1) {
+            inventory.setItem(i + 1, dispenser.getInventory().getItem(i));
+        }
+        // TODO: must handle close or will dupe!
     }
 }
 
