@@ -66,16 +66,23 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.CraftServer;
 
-class BetterDispensersAcceptTask implements Runnable {
-    Arrow arrow;
+class BetterDispensersProjectileHitTask implements Runnable {
+    Entity entity;
     BetterDispensers plugin;
 
-    public BetterDispensersAcceptTask(Arrow arrow, BetterDispensers plugin) {
-        this.arrow = arrow;
+    public BetterDispensersProjectileHitTask(Entity entity, BetterDispensers plugin) {
+        this.entity = entity;
         this.plugin = plugin;
     }
 
     public void run() {
+        if (!(entity instanceof Arrow)) {
+            plugin.log.info("TODO: non-arrow entity hit");
+            return;
+        }
+
+        Arrow arrow = (Arrow)entity;
+
         // TODO: other projectiles? snowballs?
         Block block = getArrowHit(arrow);
 
@@ -240,15 +247,9 @@ class BetterDispensersListener implements Listener {
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
     public void onProjectileHit(ProjectileHitEvent event) {
         Entity entity = event.getEntity();
-        if (!(entity instanceof Arrow)) {
-            // TODO: other projectiles!!
-            return;
-        }
-
-        Arrow arrow = (Arrow)entity;
 
         // must schedule a task since arrow collision detection hasn't happened yet
-        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new BetterDispensersAcceptTask(arrow, plugin));
+        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new BetterDispensersProjectileHitTask(entity, plugin));
     }
 
     
