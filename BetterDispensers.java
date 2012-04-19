@@ -392,10 +392,32 @@ class BetterDispensersListener implements Listener {
 
             Block b = Bukkit.getWorlds().get(0).getBlockAt(ax,ay,az);   // TODO: multi-world support!
             plugin.log("break block "+b);
-            // TODO: can this send block break events, so plugins (like EnchantMore) can handle the break?
-            // and, it should respect world protection too.. (with fake user)
-            // TODO: and don't break bedrock..
-            b.breakNaturally(new CraftItemStack(tileEntity.getItem(slot)));
+
+            // Create a new fake player to log breaking the block
+            net.minecraft.server.MinecraftServer console = ((CraftServer)Bukkit.getServer()).getServer();
+            net.minecraft.server.ItemInWorldManager manager = new net.minecraft.server.ItemInWorldManager(console.getWorldServer(0));
+
+            net.minecraft.server.EntityPlayer fakeBreakerPlayer = new net.minecraft.server.EntityPlayer(
+                console,
+                world,
+                "[BetterDispensers]",
+                manager);
+
+            Player fakeBreakerPlayerBukkit = fakePlayer.getBukkitEntity();
+
+            // .. crucially, the player must be holding the item which broke the block
+            // This is required for compatibility with EnchantMore etc.
+            fakeBreakerPlayerBukkit.setItemInHand(new CraftItemStack(tool));
+
+            BlockBreakEvent breakEvent = new BlockBreakEvent(b, fakeBreakerPlayerBukkit);
+            Bukkit.getServer().getPluginManager().callEvent(breakEvent);
+
+            fakeBreakerPlayer.die();
+
+            if (!breakEvent.isCancelled()) {
+                // TODO: and don't break bedrock..
+                b.breakNaturally(new CraftItemStack(tool));
+            }
         } else {
             // Regular dispensing.. but possibly vertical
             int slot = tileEntity.findDispenseSlot();
