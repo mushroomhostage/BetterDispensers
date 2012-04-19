@@ -302,32 +302,6 @@ class BetterDispensersListener implements Listener {
         int functions = getDispenserFunctions(block);
         plugin.log("functions="+functions);
 
-        byte data = blockState.getRawData();
-        int v;
-        double dy;
-        switch (data) {
-        case 0:     // down
-            v = -1;
-            dy = -1.0;
-            break;
-        case 1:     // up
-            v = 10;
-            dy = 1.0;
-            break;
-        case 2:     // north
-        case 3:     // south
-        case 4:     // west
-        case 5:     // east
-            // standard directions
-            // TODO: handle these ourselves!
-            event.setCancelled(false);
-            return;
-        default:
-            // 6-15 unused
-            plugin.log("unknown data value "+data);
-            return;
-        }
-
         net.minecraft.server.World world = ((CraftWorld)block.getWorld()).getHandle();
         int x = block.getX(), y = block.getY(), z = block.getZ();
 
@@ -373,7 +347,7 @@ class BetterDispensersListener implements Listener {
                 tileEntity.splitStack(i, 1);
             }
 
-            dispenseItem(world, item, x, y, z, v, dy);
+            dispenseItem(blockState, world, item, x, y, z);
         } else if ((functions & FUNCTION_INTERACTOR) != 0) {
             // Use item, i.e., like right-clicking hoe tills
             int slot = tileEntity.findDispenseSlot();
@@ -406,16 +380,49 @@ class BetterDispensersListener implements Listener {
             // and, it should respect world protection too.. (with fake user)
             b.breakNaturally(new CraftItemStack(tileEntity.getItem(slot)));
         } else {
-            // Regular dispening.. but possibly vertical
+            // Regular dispensing.. but possibly vertical
             int slot = tileEntity.findDispenseSlot();
 
             item = tileEntity.splitStack(slot, 1);
-            dispenseItem(world, item, x, y, z, v, dy);
+            dispenseItem(blockState, world, item, x, y, z);
         }
     }
 
-    // handle dispensing ourselves - see BlockDispenser.java
-    private void dispenseItem(net.minecraft.server.World world, net.minecraft.server.ItemStack item, int x, int y, int z, int v, double dy) {
+    // Dispense an item ourselves
+    // See net/minecraft/server/BlockDispenser.java dispense()
+    private void dispenseItem(BlockState blockState, net.minecraft.server.World world, net.minecraft.server.ItemStack item, int x, int y, int z) {
+        byte data = blockState.getRawData();
+    
+        double b0 = 0, b1 = 0, dy = 0;
+        double v = 0.1;     // default small velocity
+
+        switch (data) {
+        case 0:     // down
+            v = -1.0;
+            dy = -1.0;
+            break;
+        case 1:     // up
+            v = 10.0;
+            dy = 1.0;
+            break;
+        case 2:     // north
+            b1 = -1.0;
+            break;
+        case 3:     // south
+            b1 = 1.0;
+            break;
+        default:    // 6-15 unused
+            plugin.log("warning: unknown data value: " + data);
+            // vanilla falls through to west
+        case 4:     // west
+            b0 = -1.0;
+            break;
+        case 5:     // east
+            b0 = 1.0;
+            break;
+        }
+
+
         plugin.log("dispensing item "+item);
         if (item == null) {
             world.triggerEffect(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
@@ -425,22 +432,22 @@ class BetterDispensersListener implements Listener {
         net.minecraft.server.Entity entity = null;
 
         // Create new entity at center of block face
-        double x0 = x + 0.5;
-        double y0 = y + 0.5 + dy;
-        double z0 = z + 0.5;
-    
+        double x0 = x + b0*0.6 + 0.5;       // d0
+        double y0 = y + 0.5 + dy;           // d1
+        double z0 = z + b1*0.6 + 0.5;       // d2
+
         if (item.id == net.minecraft.server.Item.ARROW.id) {
             net.minecraft.server.EntityArrow arrow = new net.minecraft.server.EntityArrow(world, x0, y0, z0);
-            arrow.shoot(0, v, 0, 1.1f, 6.0f);
+            arrow.shoot(b0, v, b1, 1.1f, 6.0f);
             arrow.fromPlayer = true;
             entity = (net.minecraft.server.Entity)arrow;
         } else if (item.id == net.minecraft.server.Item.EGG.id) {
             net.minecraft.server.EntityEgg egg = new net.minecraft.server.EntityEgg(world, x0, y0, z0);
-            egg.a(0, v, 0, 1.1f, 6.0f);
+            egg.a(b0, v, b1, 1.1f, 6.0f);
             entity = (net.minecraft.server.Entity)egg;
         } else if (item.id == net.minecraft.server.Item.SNOW_BALL.id) {
             net.minecraft.server.EntitySnowball ball = new net.minecraft.server.EntitySnowball(world, x0, y0, z0);
-            ball.a(0, v, 0, 1.1f, 6.0f);
+            ball.a(b0, v, b1, 1.1f, 6.0f);
             entity = (net.minecraft.server.Entity)ball;
 
         /* TODO: add TNT cannons (optional)
@@ -453,35 +460,37 @@ class BetterDispensersListener implements Listener {
         } else if (item.id == net.minecraft.server.Item.POTION.id && net.minecraft.server.ItemPotion.c(item.getData())) {
             // splash potion
             net.minecraft.server.EntityPotion potion = new net.minecraft.server.EntityPotion(world, x0, y0, z0, item.getData());
-            potion.a(0, v, 0, 1.375f, 6.0f);     // why 1.375 not 1.1? because Minecraft
+            potion.a(b0, v, b1, 1.375f, 6.0f);     // why 1.375 not 1.1? because Minecraft
             entity = (net.minecraft.server.Entity)potion;
         } else if (item.id == net.minecraft.server.Item.EXP_BOTTLE.id) {
             net.minecraft.server.EntityThrownExpBottle bottle = new net.minecraft.server.EntityThrownExpBottle(world, x0, y0, z0);
-            bottle.a(0, v, 0, 1.1f, 6.0f);
+            bottle.a(b0, v, b1, 1.1f, 6.0f);
             entity = (net.minecraft.server.Entity)bottle;
         } else if (item.id == net.minecraft.server.Item.MONSTER_EGG.id) {
-            net.minecraft.server.ItemMonsterEgg.a(world, item.getData(), x0, y0, z0);
+            net.minecraft.server.ItemMonsterEgg.a(world, item.getData(), x0 + b0*0.3, y0 - 0.3, z0 + b1*0.3);
             // not thrown
             entity = null;
         } else if (item.id == net.minecraft.server.Item.FIREBALL.id) {
-            // TODO: doesn't seem to work right.. figure out the other parameters
-            net.minecraft.server.EntitySmallFireball fire = new net.minecraft.server.EntitySmallFireball(world, x0, y0, z0, 0, 0, 0);
+            net.minecraft.server.EntitySmallFireball fire = new net.minecraft.server.EntitySmallFireball(world, 
+                x0 + b0*0.3,
+                y0,
+                z0 + b1*0.3,
+                b0 + random.nextGaussian() * 0.05,
+                     random.nextGaussian() * 0.05,
+                b1 + random.nextGaussian() * 0.05);
             entity = (net.minecraft.server.Entity)fire;
         } else {
             // non-projectile item
             net.minecraft.server.EntityItem entityItem = new net.minecraft.server.EntityItem(world, x0, y0 - 0.3d, z0, item);
 
-            double d0 = (double)x + 0.5d;
-            double d1 = (double)y + 0.5d;
-            double d2 = (double)z + 0.5d;
-            double d3 = random.nextDouble() * 0.1d + 0.2d;
-            double motX = d3;
-            double motY = 0.2d;
-            double motZ = d3;
-
-            motX += random.nextGaussian() * 0.0075 * 6.0d;
-            motY += random.nextGaussian() * 0.0075 * 6.0d;
-            motZ += random.nextGaussian() * 0.0075 * 6.0d;
+            // CraftBukkit moves this code up for events.. but its only applicable here (see MCP)
+            double fuzz = random.nextDouble() * 0.1 + 0.2;  // d3
+            double motX = b0 * fuzz;
+            double motY = 0.2;
+            double motZ = b1 * fuzz;
+            motX += random.nextGaussian() * 0.0075 * 6.0;
+            motY += random.nextGaussian() * 0.0075 * 6.0;
+            motZ += random.nextGaussian() * 0.0075 * 6.0;
 
             entityItem.motX = motX;
             entityItem.motY = motY;
@@ -495,7 +504,7 @@ class BetterDispensersListener implements Listener {
         }
 
         world.triggerEffect(1002, x, y, z, 0);  // playAuxSfx 
-        world.triggerEffect(2000, x, y, z, 4);  // smoke
+        world.triggerEffect(2000, x, y, z, (int)b0 + 1 + ((int)b1 + 1) * 3);  // smoke
     }
 
     // Show dispenser inventory when opening adjacent crafting table
