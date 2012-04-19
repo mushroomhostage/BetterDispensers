@@ -42,6 +42,7 @@ import java.io.*;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.*;
 import org.bukkit.event.*;
+import org.bukkit.event.inventory.*;
 import org.bukkit.event.block.*;
 import org.bukkit.event.player.*;
 import org.bukkit.event.entity.*;
@@ -173,6 +174,16 @@ class BetterDispensersListener implements Listener {
     BetterDispensers plugin;
     Random random;
 
+    // Directions to check around dispenser
+    final BlockFace[] surfaceDirections = { 
+            BlockFace.NORTH,
+            BlockFace.EAST,
+            BlockFace.SOUTH,
+            BlockFace.WEST,
+            BlockFace.UP,
+            BlockFace.DOWN };
+
+    // Player for performing actions from the dispenser
     net.minecraft.server.EntityPlayer fakePlayer;
 
     public BetterDispensersListener(BetterDispensers plugin) {
@@ -197,15 +208,7 @@ class BetterDispensersListener implements Listener {
     public int getDispenserFunctions(Block origin) {
         int functions = 0;
 
-        BlockFace[] directions = { 
-            BlockFace.NORTH,
-            BlockFace.EAST,
-            BlockFace.SOUTH,
-            BlockFace.WEST,
-            BlockFace.UP,
-            BlockFace.DOWN };
-
-        for (BlockFace direction: directions) {
+        for (BlockFace direction: surfaceDirections) {
             Block near = origin.getRelative(direction);
 
             int id = near.getTypeId();
@@ -225,9 +228,7 @@ class BetterDispensersListener implements Listener {
         }
 
         return functions;
-
     }
-
 
     // accept arrows inside dispensers
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
@@ -492,6 +493,32 @@ class BetterDispensersListener implements Listener {
 
         world.triggerEffect(1002, x, y, z, 0);  // playAuxSfx 
         world.triggerEffect(2000, x, y, z, 4);  // smoke
+    }
+
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
+    public void onInventoryOpen(InventoryOpenEvent event) {
+        InventoryView view = event.getView();
+
+        if (view.getType() != InventoryType.WORKBENCH) {
+            return;
+        }
+
+        plugin.log.info("open crafting");
+
+        Inventory inventory = event.getInventory();
+        InventoryHolder holder = inventory.getHolder();
+
+        // this is the player, not the workbench
+        plugin.log.info("holder ="+holder);
+
+        // TODO: get the workbench block, so we can look around it
+
+        /*
+        for (BlockFace direction: surfaceDirections) {
+            Block near = workbench.getRelative(direction);
+
+            int id = near.getTypeId();
+            */
     }
 }
 
