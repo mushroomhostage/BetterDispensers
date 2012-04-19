@@ -564,6 +564,7 @@ class BetterDispensersListener implements Listener {
         openedCrafters.put(player, dispenser);
     }
 
+    // Save crafting table to dispenser inventory on close
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
     public void onInventoryClose(InventoryCloseEvent event) {
         InventoryView view = event.getView();
@@ -571,9 +572,9 @@ class BetterDispensersListener implements Listener {
             return;
         }
 
-        plugin.log.info("close table");
+        Inventory inventory = event.getInventory();
 
-        InventoryHolder holder = event.getInventory().getHolder();
+        InventoryHolder holder = inventory.getHolder();
         if (!(holder instanceof Player)) {
             return;
         }
@@ -585,7 +586,15 @@ class BetterDispensersListener implements Listener {
         }
         openedCrafters.remove(player);
 
-        plugin.log.info("close crafter");
+        // Copy crafting table view inventory to dispenser (ignore craft result)
+        for (int i = 1; i < inventory.getSize(); i += 1) {
+            dispenser.getInventory().setItem(i - 1, inventory.getItem(i));
+        }
+
+        // so doesn't drop items and dupe
+        inventory.clear();
+        // TODO: what if someone opens dispenser and takes from it while the
+        // corresponding crafting table is open??
     }
 }
 
