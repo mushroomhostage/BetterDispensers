@@ -402,7 +402,7 @@ class BetterDispensersListener implements Listener {
             dy = -1.0;
             break;
         case 1:     // up
-            v = 10.0;
+            v = 4.0;
             dy = 1.0;
             break;
         case 2:     // north
@@ -486,7 +486,7 @@ class BetterDispensersListener implements Listener {
             // CraftBukkit moves this code up for events.. but its only applicable here (see MCP)
             double fuzz = random.nextDouble() * 0.1 + 0.2;  // d3
             double motX = b0 * fuzz;
-            double motY = 0.2;
+            double motY = 0.2 * v;
             double motZ = b1 * fuzz;
             motX += random.nextGaussian() * 0.0075 * 6.0;
             motY += random.nextGaussian() * 0.0075 * 6.0;
