@@ -77,13 +77,13 @@ class BetterDispensersProjectileHitTask implements Runnable {
 
     public void run() {
         if (!(entity instanceof Arrow)) {
-            plugin.log.info("TODO: non-arrow entity hit");
+            // TODO: support non-arrow projectiles, like snowballs
+            // but, seems we would have to do the raytracing ourselves - see http://forums.bukkit.org/threads/solved-on-how-to-get-the-block-an-arrow-lands-in.55768/#post-1080442
             return;
         }
 
         Arrow arrow = (Arrow)entity;
 
-        // TODO: other projectiles? snowballs?
         Block block = getArrowHit(arrow);
 
         if (block.getType() != Material.DISPENSER) {
@@ -103,8 +103,6 @@ class BetterDispensersProjectileHitTask implements Runnable {
         net.minecraft.server.EntityArrow entityArrow = ((CraftArrow)arrow).getHandle();
 
         if ((functions & BetterDispensersListener.FUNCTION_REACTOR) != 0) {
-            // TODO: option to always enable, for compatibility with 1.x
-
             // Activates when hit with arrows
             if (entityArrow.fromPlayer && plugin.getConfig().getBoolean("reactor.enablePlayerArrows", true) ||
                 !entityArrow.fromPlayer && plugin.getConfig().getBoolean("reactor.enableNonPlayerArrows", true)) {
