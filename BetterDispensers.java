@@ -188,12 +188,14 @@ class BetterDispensersListener implements Listener {
     // Player for performing actions from the dispenser
     net.minecraft.server.EntityPlayer fakePlayer;
 
-
+    ConcurrentHashMap<Player,Dispenser> openedCrafters;
 
     public BetterDispensersListener(BetterDispensers plugin) {
         this.plugin = plugin;
 
         this.random = new Random();
+
+        this.openedCrafters = new ConcurrentHashMap<Player,Dispenser>();
 
         net.minecraft.server.MinecraftServer console = ((CraftServer)Bukkit.getServer()).getServer();
         net.minecraft.server.ItemInWorldManager manager = new net.minecraft.server.ItemInWorldManager(console.getWorldServer(0));
@@ -557,7 +559,33 @@ class BetterDispensersListener implements Listener {
         for (int i = 0; i < dispenser.getInventory().getSize(); i += 1) {
             inventory.setItem(i + 1, dispenser.getInventory().getItem(i));
         }
-        // TODO: must handle close or will dupe!
+
+        // For tracking close
+        openedCrafters.put(player, dispenser);
+    }
+
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
+    public void onInventoryClose(InventoryCloseEvent event) {
+        InventoryView view = event.getView();
+        if (view.getType() != InventoryType.WORKBENCH) {
+            return;
+        }
+
+        plugin.log.info("close table");
+
+        InventoryHolder holder = event.getInventory().getHolder();
+        if (!(holder instanceof Player)) {
+            return;
+        }
+        Player player = (Player)holder;
+
+        Dispenser dispenser = openedCrafters.get(player);
+        if (dispenser == null) {
+            return;
+        }
+        openedCrafters.remove(player);
+
+        plugin.log.info("close crafter");
     }
 }
 
