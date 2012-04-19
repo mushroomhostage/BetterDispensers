@@ -351,9 +351,15 @@ class BetterDispensersListener implements Listener {
 
             int face = 0;    // TODO: top?
 
-            // TODO: use actual direction! and have a reach, like player!
-            int ax = x, ay = y, az = z+1;
-            plugin.log("DEPLOY at "+ax+","+ay+","+az);
+            // Get block direction
+            int ax = x, ay = y, az = z;
+            Vector direction = getMetadataDirection(blockState.getRawData());
+            ax += direction.getBlockX();
+            ay += direction.getBlockY();
+            az += direction.getBlockZ();
+            // TODO: reach, if air?
+
+            plugin.log("INTERACT at "+ax+","+ay+","+az);
 
             net.minecraft.server.Item.byId[item.id].interactWith(item, fakePlayer, world, ax, ay, az, face);
 
@@ -366,13 +372,19 @@ class BetterDispensersListener implements Listener {
 
             tileEntity.getItem(slot).damage(1, fakePlayer);
 
-            // TODO: use actual direction! and same reach as player, like interactor
-            int ax = x, ay = y, az = z+1;
+            // Get block direction
+            int ax = x, ay = y, az = z;
+            Vector direction = getMetadataDirection(blockState.getRawData());
+            ax += direction.getBlockX();
+            ay += direction.getBlockY();
+            az += direction.getBlockZ();
+            // TODO: reach, if air?
 
             Block b = Bukkit.getWorlds().get(0).getBlockAt(ax,ay,az);   // TODO: multi-world support!
-            plugin.log("block "+b);
+            plugin.log("break block "+b);
             // TODO: can this send block break events, so plugins (like EnchantMore) can handle the break?
             // and, it should respect world protection too.. (with fake user)
+            // TODO: and don't break bedrock..
             b.breakNaturally(new CraftItemStack(tileEntity.getItem(slot)));
         } else {
             // Regular dispensing.. but possibly vertical
