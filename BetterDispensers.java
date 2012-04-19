@@ -383,21 +383,15 @@ class BetterDispensersListener implements Listener {
         }
     }
 
-    // Dispense an item ourselves
-    // See net/minecraft/server/BlockDispenser.java dispense()
-    private void dispenseItem(BlockState blockState, net.minecraft.server.World world, net.minecraft.server.ItemStack item, int x, int y, int z) {
-        byte data = blockState.getRawData();
-    
-        double dx = 0, dz = 0, dy = 0;
-        double v = plugin.getConfig().getDouble("dispenser.velocityHorizontal", 0.1);
+    // Get direction vector for which way the dispenser block is pointing
+    public Vector getMetadataDirection(byte data) {
+        double dx = 0, dy = 0, dz = 0;
 
         switch (data) {
         case 0:     // down
-            v = plugin.getConfig().getDouble("dispenser.velocityDown", -0.05);
             dy = -1.0;
             break;
         case 1:     // up
-            v = plugin.getConfig().getDouble("dispenser.velocityUp", 0.4);
             dy = 1.0;
             break;
         case 2:     // north
@@ -417,6 +411,36 @@ class BetterDispensersListener implements Listener {
             break;
         }
 
+        return new Vector(dx, dy, dz);
+    }
+
+    // Dispense an item ourselves
+    // See net/minecraft/server/BlockDispenser.java dispense()
+    public void dispenseItem(BlockState blockState, net.minecraft.server.World world, net.minecraft.server.ItemStack item, int x, int y, int z) {
+        // Get direction vector, including up/down
+        double dx = 0, dz = 0, dy = 0;
+        byte data = blockState.getRawData();
+
+        Vector direction = getMetadataDirection(data);
+
+        dx = direction.getX();
+        dy = direction.getY();
+        dz = direction.getZ();
+
+
+        double v;
+
+        // Get velocity appropriate for direction
+        switch (data) {
+        case 0:     // down
+            v = plugin.getConfig().getDouble("dispenser.velocityDown", -0.05);
+            break;
+        case 1:     // up
+            v = plugin.getConfig().getDouble("dispenser.velocityUp", 0.4);
+            break;
+        default:    // horizontal
+            v = plugin.getConfig().getDouble("dispenser.velocityHorizontal", 0.1);
+        }
 
         plugin.log("dispensing item "+item);
         if (item == null) {
