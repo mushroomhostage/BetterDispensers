@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.logging.Logger;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Random;
 import java.lang.Byte;
 import java.lang.reflect.Field;
@@ -182,14 +183,19 @@ class BetterDispensersListener implements Listener {
             BlockFace.WEST,
             BlockFace.UP,
             BlockFace.DOWN };
+    ConcurrentHashMap<Player, BlockState> lastInteractedBlock;
 
     // Player for performing actions from the dispenser
     net.minecraft.server.EntityPlayer fakePlayer;
+
+
 
     public BetterDispensersListener(BetterDispensers plugin) {
         this.plugin = plugin;
 
         this.random = new Random();
+
+        this.lastInteractedBlock = new ConcurrentHashMap<Player, BlockState>();
         
         net.minecraft.server.MinecraftServer console = ((CraftServer)Bukkit.getServer()).getServer();
         net.minecraft.server.ItemInWorldManager manager = new net.minecraft.server.ItemInWorldManager(console.getWorldServer(0));
@@ -496,6 +502,24 @@ class BetterDispensersListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
+
+        Block block = event.getClickedBlock();
+        if (block == null) {
+            return;
+        }
+
+        Player player = event.getPlayer();
+
+        // Record the most recent right-clicked block from the player, so the inventory open
+        // event can tell what crafting table was opened
+        lastInteractedBlock.put(player, block.getState());
+    }
+
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
     public void onInventoryOpen(InventoryOpenEvent event) {
         InventoryView view = event.getView();
 
@@ -508,8 +532,15 @@ class BetterDispensersListener implements Listener {
         Inventory inventory = event.getInventory();
         InventoryHolder holder = inventory.getHolder();
 
-        // this is the player, not the workbench
-        plugin.log.info("holder ="+holder);
+        if (!(holder instanceof Player)) {
+            plugin.log.info("inventory opened by non-player: " + holder);
+            return;
+        }
+
+        Player player = (Player)holder;
+
+        plugin.log.info("target block: " + player.getTargetBlock(null, 100));
+        plugin.log.info("last interacted with: " + lastInteractedBlock.get(player));
 
         // TODO: get the workbench block, so we can look around it
 
