@@ -388,7 +388,7 @@ class BetterDispensersListener implements Listener {
     private void dispenseItem(BlockState blockState, net.minecraft.server.World world, net.minecraft.server.ItemStack item, int x, int y, int z) {
         byte data = blockState.getRawData();
     
-        double b0 = 0, b1 = 0, dy = 0;
+        double dx = 0, dz = 0, dy = 0;
         double v = plugin.getConfig().getDouble("dispenser.velocityHorizontal", 0.1);
 
         switch (data) {
@@ -401,19 +401,19 @@ class BetterDispensersListener implements Listener {
             dy = 1.0;
             break;
         case 2:     // north
-            b1 = -1.0;
+            dz = -1.0;
             break;
         case 3:     // south
-            b1 = 1.0;
+            dz = 1.0;
             break;
         default:    // 6-15 unused
             plugin.log("warning: unknown data value: " + data);
             // vanilla falls through to west
         case 4:     // west
-            b0 = -1.0;
+            dx = -1.0;
             break;
         case 5:     // east
-            b0 = 1.0;
+            dx = 1.0;
             break;
         }
 
@@ -427,28 +427,28 @@ class BetterDispensersListener implements Listener {
         net.minecraft.server.Entity entity = null;
 
         // Create new entity at center of block face
-        double x0 = x + b0*0.6 + 0.5;       // d0
+        double x0 = x + dx*0.6 + 0.5;       // d0
         double y0 = y + 0.5 + dy;           // d1
-        double z0 = z + b1*0.6 + 0.5;       // d2
+        double z0 = z + dz*0.6 + 0.5;       // d2
 
         if (item.id == net.minecraft.server.Item.ARROW.id) {
             net.minecraft.server.EntityArrow arrow = new net.minecraft.server.EntityArrow(world, x0, y0, z0);
             //  shoot() is actually "setArrowHeading(x, y, z, force, forceVariation)"
 
-            arrow.shoot(b0, v, b1, 
+            arrow.shoot(dx, v, dz, 
                 (float)plugin.getConfig().getDouble("dispenser.arrowForce", 1.1), 
                 (float)plugin.getConfig().getDouble("dispenser.arrowSpread", 6.0));
             arrow.fromPlayer = true;
             entity = (net.minecraft.server.Entity)arrow;
         } else if (item.id == net.minecraft.server.Item.EGG.id) {
             net.minecraft.server.EntityEgg egg = new net.minecraft.server.EntityEgg(world, x0, y0, z0);
-            egg.a(b0, v, b1, 
+            egg.a(dx, v, dz, 
                 (float)plugin.getConfig().getDouble("dispenser.eggForce", 1.1),
                 (float)plugin.getConfig().getDouble("dispenser.eggSpread", 6.0));
             entity = (net.minecraft.server.Entity)egg;
         } else if (item.id == net.minecraft.server.Item.SNOW_BALL.id) {
             net.minecraft.server.EntitySnowball ball = new net.minecraft.server.EntitySnowball(world, x0, y0, z0);
-            ball.a(b0, v, b1, 
+            ball.a(dx, v, dz, 
                 (float)plugin.getConfig().getDouble("dispenser.snowballForce", 1.1),
                 (float)plugin.getConfig().getDouble("dispenser.snowballSpread", 6.0));
             entity = (net.minecraft.server.Entity)ball;
@@ -463,28 +463,28 @@ class BetterDispensersListener implements Listener {
         } else if (item.id == net.minecraft.server.Item.POTION.id && net.minecraft.server.ItemPotion.c(item.getData())) {
             // splash potion
             net.minecraft.server.EntityPotion potion = new net.minecraft.server.EntityPotion(world, x0, y0, z0, item.getData());
-            potion.a(b0, v, b1, 
+            potion.a(dx, v, dz, 
                 (float)plugin.getConfig().getDouble("dispenser.potionForce", 1.375), // why 1.375 not 1.1? because Minecraft
                 (float)plugin.getConfig().getDouble("dispenser.potionSpread", 6.0f));
             entity = (net.minecraft.server.Entity)potion;
         } else if (item.id == net.minecraft.server.Item.EXP_BOTTLE.id) {
             net.minecraft.server.EntityThrownExpBottle bottle = new net.minecraft.server.EntityThrownExpBottle(world, x0, y0, z0);
-            bottle.a(b0, v, b1, 
+            bottle.a(dx, v, dz, 
                 (float)plugin.getConfig().getDouble("dispenser.expbottleForce", 1.1),
                 (float)plugin.getConfig().getDouble("dispenser.expbottlepread", 6.0));
             entity = (net.minecraft.server.Entity)bottle;
         } else if (item.id == net.minecraft.server.Item.MONSTER_EGG.id) {
-            net.minecraft.server.ItemMonsterEgg.a(world, item.getData(), x0 + b0*0.3, y0 - 0.3, z0 + b1*0.3);
+            net.minecraft.server.ItemMonsterEgg.a(world, item.getData(), x0 + dx*0.3, y0 - 0.3, z0 + dz*0.3);
             // not thrown
             entity = null;
         } else if (item.id == net.minecraft.server.Item.FIREBALL.id) {
             net.minecraft.server.EntitySmallFireball fire = new net.minecraft.server.EntitySmallFireball(world, 
-                x0 + b0*0.3,
+                x0 + dx*0.3,
                 y0,
-                z0 + b1*0.3,
-                b0 + random.nextGaussian() * plugin.getConfig().getDouble("dispenser.fireballRandomMotionX", 0.05),
+                z0 + dz*0.3,
+                dx + random.nextGaussian() * plugin.getConfig().getDouble("dispenser.fireballRandomMotionX", 0.05),
                      random.nextGaussian() * plugin.getConfig().getDouble("dispenser.fireballRandomMotionY", 0.05),
-                b1 + random.nextGaussian() * plugin.getConfig().getDouble("dispenser.fireballRandomMotionZ", 0.05));
+                dz + random.nextGaussian() * plugin.getConfig().getDouble("dispenser.fireballRandomMotionZ", 0.05));
             entity = (net.minecraft.server.Entity)fire;
         } else {
             // non-projectile item
@@ -492,9 +492,9 @@ class BetterDispensersListener implements Listener {
 
             // CraftBukkit moves this code up for events.. but its only applicable here (see MCP)
             double fuzz = random.nextDouble() * 0.1 + 0.2;  // d3
-            double motX = b0 * fuzz;
+            double motX = dx * fuzz;
             double motY = v * plugin.getConfig().getDouble("dispenser.velocityItemFactor", 2.0);
-            double motZ = b1 * fuzz;
+            double motZ = dz * fuzz;
             motX += random.nextGaussian() * plugin.getConfig().getDouble("dispenser.itemRandomMotionX", 0.0075 * 6.0);
             motY += random.nextGaussian() * plugin.getConfig().getDouble("dispenser.itemRandomMotionY", 0.0075 * 6.0);
             motZ += random.nextGaussian() * plugin.getConfig().getDouble("dispenser.itemRandomMotionZ", 0.0075 * 6.0);
@@ -511,7 +511,7 @@ class BetterDispensersListener implements Listener {
         }
 
         world.triggerEffect(1002, x, y, z, 0);  // playAuxSfx 
-        world.triggerEffect(2000, x, y, z, (int)b0 + 1 + ((int)b1 + 1) * 3);  // smoke
+        world.triggerEffect(2000, x, y, z, (int)dx + 1 + ((int)dz + 1) * 3);  // smoke
     }
 
     // Show dispenser inventory when opening adjacent crafting table
