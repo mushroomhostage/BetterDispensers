@@ -102,12 +102,10 @@ class BetterDispensersProjectileHitTask implements Runnable {
 
         net.minecraft.server.EntityArrow entityArrow = ((CraftArrow)arrow).getHandle();
 
-        if ((functions & BetterDispensersListener.FUNCTION_REACTOR) != 0) {
-            // Activates when hit with arrows
-            if (entityArrow.fromPlayer && plugin.getConfig().getBoolean("reactor.enablePlayerArrows", true) ||
-                !entityArrow.fromPlayer && plugin.getConfig().getBoolean("reactor.enableNonPlayerArrows", true)) {
-                dispenser.dispense();
-            }
+        // Activates when hit with arrows
+        if (entityArrow.fromPlayer && plugin.getConfig().getBoolean("dispenser.dispenseOnPlayerArrows", true) ||
+            !entityArrow.fromPlayer && plugin.getConfig().getBoolean("dispenser.dispenseOnNonPlayerArrows", true)) {
+            dispenser.dispense();
         }
 
         if ((functions & BetterDispensersListener.FUNCTION_VACUUM) != 0) {
@@ -229,8 +227,6 @@ class BetterDispensersListener implements Listener {
                 functions |= FUNCTION_INTERACTOR;
             } else if (id == plugin.getConfig().getInt("breaker.blockID", 42 /* iron block */)) {
                 functions |= FUNCTION_BREAKER;
-            } else if (id == plugin.getConfig().getInt("reactor.blockID", 4 /* cobblestone */) || plugin.getConfig().getBoolean("reactor.enableAlways", false)) {
-                functions |= FUNCTION_REACTOR;
             } else if (id == plugin.getConfig().getInt("vacuum.blockID", 49 /* obsidian */)) {
                 functions |= FUNCTION_VACUUM;
             } 
@@ -280,9 +276,8 @@ class BetterDispensersListener implements Listener {
     public static final int FUNCTION_CRAFTER    = 1 << 0;
     public static final int FUNCTION_INTERACTOR = 1 << 1;
     public static final int FUNCTION_BREAKER    = 1 << 2;
-    public static final int FUNCTION_REACTOR    = 1 << 3;
-    public static final int FUNCTION_VACUUM     = 1 << 4;
-    public static final int FUNCTION_STORAGE    = 1 << 5;
+    public static final int FUNCTION_VACUUM     = 1 << 3;
+    public static final int FUNCTION_STORAGE    = 1 << 4;
 
     // handle up/down dispensers
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
@@ -394,15 +389,15 @@ class BetterDispensersListener implements Listener {
         byte data = blockState.getRawData();
     
         double b0 = 0, b1 = 0, dy = 0;
-        double v = 0.1;     // default small velocity
+        double v = plugin.getConfig().getDouble("dispenser.velocityHorizontal", 0.1);
 
         switch (data) {
         case 0:     // down
-            v = -1.0;
+            v = plugin.getConfig().getDouble("dispenser.velocityDown", -0.05);
             dy = -1.0;
             break;
         case 1:     // up
-            v = 4.0;
+            v = plugin.getConfig().getDouble("dispenser.velocityUp", 0.4);
             dy = 1.0;
             break;
         case 2:     // north
@@ -486,7 +481,7 @@ class BetterDispensersListener implements Listener {
             // CraftBukkit moves this code up for events.. but its only applicable here (see MCP)
             double fuzz = random.nextDouble() * 0.1 + 0.2;  // d3
             double motX = b0 * fuzz;
-            double motY = 0.2 * v;
+            double motY = v * plugin.getConfig().getDouble("dispenser.velocityItemFactor", 2.0);
             double motZ = b1 * fuzz;
             motX += random.nextGaussian() * 0.0075 * 6.0;
             motY += random.nextGaussian() * 0.0075 * 6.0;
