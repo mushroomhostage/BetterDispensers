@@ -370,7 +370,17 @@ class BetterDispensersListener implements Listener {
         } else if ((functions & FUNCTION_BREAKER) != 0) {
             int slot = tileEntity.findDispenseSlot();
 
-            tileEntity.getItem(slot).damage(1, fakePlayer);
+            net.minecraft.server.ItemStack tool = tileEntity.getItem(slot);
+
+            try {
+                tool.damage(1, fakePlayer);
+            } catch (NullPointerException e) {
+                // yeah yeah I know.. hackish workaround
+                // damage() on a tool on its last use will try to remove the tool
+                // from the player's inventory, but we don't have a player inventory, so
+                // it will NPE -- catch this, and clear the item ourselves
+                tileEntity.setItem(slot, null);
+            }
 
             // Get block direction
             int ax = x, ay = y, az = z;
