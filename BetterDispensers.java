@@ -88,16 +88,16 @@ class BetterDispensersAcceptTask implements Runnable {
         Dispenser dispenser = (Dispenser)blockState;
         Inventory inventory = dispenser.getInventory();
 
-        int functions = BetterDispensersListener.getDispenserFunctions(block);
+        int functions = plugin.listener.getDispenserFunctions(block);
 
         net.minecraft.server.EntityArrow entityArrow = ((CraftArrow)arrow).getHandle();
 
-        if ((functions & BetterDispensersListener.FUNCTION_ACTIVATOR) != 0) {
+        if ((functions & BetterDispensersListener.FUNCTION_REACTOR) != 0) {
             // TODO: option to always enable, for compatibility with 1.x
 
             // Activates when hit with arrows
-            if (entityArrow.fromPlayer && plugin.getConfig().getBoolean("activator.enablePlayerArrows", true) ||
-                !entityArrow.fromPlayer && plugin.getConfig().getBoolean("activator.enableNonPlayerArrows", true)) {
+            if (entityArrow.fromPlayer && plugin.getConfig().getBoolean("reactor.enablePlayerArrows", true) ||
+                !entityArrow.fromPlayer && plugin.getConfig().getBoolean("reactor.enableNonPlayerArrows", true)) {
                 dispenser.dispense();
             }
         }
@@ -179,7 +179,7 @@ class BetterDispensersListener implements Listener {
         this.plugin = plugin;
 
         this.random = new Random();
-
+        
         net.minecraft.server.MinecraftServer console = ((CraftServer)Bukkit.getServer()).getServer();
         net.minecraft.server.ItemInWorldManager manager = new net.minecraft.server.ItemInWorldManager(console.getWorldServer(0));
 
@@ -193,12 +193,48 @@ class BetterDispensersListener implements Listener {
         Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
+    // Get bit mask of the configured 'functions' of the dispenser based on its surroundings
+    public int getDispenserFunctions(Block origin) {
+        int functions = 0;
+
+        BlockFace[] directions = { 
+            BlockFace.NORTH,
+            BlockFace.EAST,
+            BlockFace.SOUTH,
+            BlockFace.WEST,
+            BlockFace.UP,
+            BlockFace.DOWN };
+
+        for (BlockFace direction: directions) {
+            Block near = origin.getRelative(direction);
+
+            int id = near.getTypeId();
+            if (id == plugin.getConfig().getInt("crafter.blockID", 58 /* crafting table */)) {
+                functions |= FUNCTION_CRAFTER;
+            } else if (id == plugin.getConfig().getInt("interactor.blockID", 22 /* lapis block */)) {
+                functions |= FUNCTION_INTERACTOR;
+            } else if (id == plugin.getConfig().getInt("breaker.blockID", 42 /* iron block */)) {
+                functions |= FUNCTION_BREAKER;
+            } else if (id == plugin.getConfig().getInt("reactor.blockID", 4 /* cobblestone */) || plugin.getConfig().getBoolean("enableAlways", false)) {
+                functions |= FUNCTION_REACTOR;
+            } else if (id == plugin.getConfig().getInt("vacuum.blockID", 49 /* obsidian */)) {
+                functions |= FUNCTION_VACUUM;
+            } 
+            // TODO: if any kind of container block (chest = 54, modded chest, another dispenser) 
+            // functions |= FUNCTION_STORAGE
+        }
+
+        return functions;
+
+    }
+
 
     // accept arrows inside dispensers
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
     public void onProjectileHit(ProjectileHitEvent event) {
         Entity entity = event.getEntity();
         if (!(entity instanceof Arrow)) {
+            // TODO: other projectiles!!
             return;
         }
 
@@ -236,38 +272,11 @@ class BetterDispensersListener implements Listener {
     }
 
     public static final int FUNCTION_CRAFTER    = 1 << 0;
-    public static final int FUNCTION_DEPLOYER   = 1 << 1;
+    public static final int FUNCTION_INTERACTOR = 1 << 1;
     public static final int FUNCTION_BREAKER    = 1 << 2;
-    public static final int FUNCTION_ACTIVATOR  = 1 << 3;
+    public static final int FUNCTION_REACTOR    = 1 << 3;
     public static final int FUNCTION_VACUUM     = 1 << 4;
     public static final int FUNCTION_STORAGE    = 1 << 5;
-
-    public static int getDispenserFunctions(Block origin) {
-        int functions = 0;
-
-        BlockFace[] directions = { 
-            BlockFace.NORTH,
-            BlockFace.EAST,
-            BlockFace.SOUTH,
-            BlockFace.WEST,
-            BlockFace.UP,
-            BlockFace.DOWN };
-
-        for (BlockFace direction: directions) {
-            Block near = origin.getRelative(direction);
-
-            switch(near.getTypeId()) {
-            case 58 /* crafting table */:   functions |= FUNCTION_CRAFTER; break;
-            case 22 /* lapis block */:      functions |= FUNCTION_DEPLOYER; break;
-            case 42 /* block of iron */:    functions |= FUNCTION_BREAKER; break;
-            case 41 /* block of gold */:    functions |= FUNCTION_ACTIVATOR; break;
-            case 49 /* obsidian */:         functions |= FUNCTION_VACUUM; break;
-            case 54 /* chest */:            functions |= FUNCTION_STORAGE; break;
-            }
-        }
-
-        return functions;
-    }
 
     // handle up/down dispensers
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
@@ -354,7 +363,7 @@ class BetterDispensersListener implements Listener {
             for (int i = 0; i < contents.length; i += 1) {
                 tileEntity.splitStack(i, 1);
             }
-        } else if ((functions & FUNCTION_DEPLOYER) != 0) {
+        } else if ((functions & FUNCTION_INTERACTOR) != 0) {
             // Use item, i.e., like right-clicking hoe tills
             int slot = tileEntity.findDispenseSlot();
             // TODO: take tool damage if is a tool, instead of removing!
@@ -380,7 +389,7 @@ class BetterDispensersListener implements Listener {
 
             tileEntity.getItem(slot).damage(1, fakePlayer);
 
-            // TODO: use actual direction! and same reach as player, like deployer
+            // TODO: use actual direction! and same reach as player, like interactor
             int ax = x, ay = y, az = z+1;
 
             Block b = Bukkit.getWorlds().get(0).getBlockAt(ax,ay,az);   // TODO: multi-world support!
