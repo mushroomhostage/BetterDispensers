@@ -418,6 +418,10 @@ class BetterDispensersListener implements Listener {
 
         // Take random item to dispense
 
+        dispenseItem(world, item, x, y, z, v, dy);
+    }
+
+    private void dispenseItem(net.minecraft.server.World world, net.minecraft.server.ItemStack item, int x, int y, int z, int v, double dy) {
         plugin.log("dispensing item "+item);
         if (item == null) {
             world.triggerEffect(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
