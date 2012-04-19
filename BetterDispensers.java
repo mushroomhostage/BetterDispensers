@@ -229,7 +229,7 @@ class BetterDispensersListener implements Listener {
                 functions |= FUNCTION_INTERACTOR;
             } else if (id == plugin.getConfig().getInt("breaker.blockID", 42 /* iron block */)) {
                 functions |= FUNCTION_BREAKER;
-            } else if (id == plugin.getConfig().getInt("reactor.blockID", 4 /* cobblestone */) || plugin.getConfig().getBoolean("enableAlways", false)) {
+            } else if (id == plugin.getConfig().getInt("reactor.blockID", 4 /* cobblestone */) || plugin.getConfig().getBoolean("reactor.enableAlways", false)) {
                 functions |= FUNCTION_REACTOR;
             } else if (id == plugin.getConfig().getInt("vacuum.blockID", 49 /* obsidian */)) {
                 functions |= FUNCTION_VACUUM;
@@ -294,8 +294,10 @@ class BetterDispensersListener implements Listener {
             return;
         }
 
-       
         Dispenser dispenser = (Dispenser)blockState;
+
+        // Override ALL dispensing everywhere and do it ourselves
+        event.setCancelled(true);
 
         int functions = getDispenserFunctions(block);
         plugin.log("functions="+functions);
@@ -318,6 +320,7 @@ class BetterDispensersListener implements Listener {
         case 5:     // east
             // standard directions
             // TODO: handle these ourselves!
+            event.setCancelled(false);
             return;
         default:
             // 6-15 unused
@@ -369,6 +372,8 @@ class BetterDispensersListener implements Listener {
             for (int i = 0; i < contents.length; i += 1) {
                 tileEntity.splitStack(i, 1);
             }
+
+            dispenseItem(world, item, x, y, z, v, dy);
         } else if ((functions & FUNCTION_INTERACTOR) != 0) {
             // Use item, i.e., like right-clicking hoe tills
             int slot = tileEntity.findDispenseSlot();
@@ -387,9 +392,6 @@ class BetterDispensersListener implements Listener {
             plugin.log("block "+b);
 
             // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
-
-            event.setCancelled(true);
-            return;
         } else if ((functions & FUNCTION_BREAKER) != 0) {
             int slot = tileEntity.findDispenseSlot();
 
@@ -403,24 +405,16 @@ class BetterDispensersListener implements Listener {
             // TODO: can this send block break events, so plugins (like EnchantMore) can handle the break?
             // and, it should respect world protection too.. (with fake user)
             b.breakNaturally(new CraftItemStack(tileEntity.getItem(slot)));
-
-            event.setCancelled(true);
-            return;
         } else {
-            // Take one from random slot
+            // Regular dispening.. but possibly vertical
             int slot = tileEntity.findDispenseSlot();
 
             item = tileEntity.splitStack(slot, 1);
+            dispenseItem(world, item, x, y, z, v, dy);
         }
-        
-        // handle dispensing ourselves - see BlockDispenser.java
-        event.setCancelled(true);
-
-        // Take random item to dispense
-
-        dispenseItem(world, item, x, y, z, v, dy);
     }
 
+    // handle dispensing ourselves - see BlockDispenser.java
     private void dispenseItem(net.minecraft.server.World world, net.minecraft.server.ItemStack item, int x, int y, int z, int v, double dy) {
         plugin.log("dispensing item "+item);
         if (item == null) {
