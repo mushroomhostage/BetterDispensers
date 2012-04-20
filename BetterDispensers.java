@@ -432,40 +432,42 @@ class BetterDispensersListener implements Listener {
             int slot = tileEntity.findDispenseSlot();
             net.minecraft.server.ItemStack item = tileEntity.getItem(slot);
 
-            if (false && isBlock(item)) {
-                // TODO: place?
-                plugin.log("interact as block "+item);
-
+            // damage tools, or use up items
+            if (isTool(item)) {
+                damageToolInDispenser(item, slot, tileEntity);
             } else {
-                // damage tools, or use up items
-                if (isTool(item)) {
-                    damageToolInDispenser(item, slot, tileEntity);
-                } else {
-                    tileEntity.splitStack(slot, 1);
-                }
+                tileEntity.splitStack(slot, 1);
+            }
 
-                // Interact with top of block
-                // TODO: should we interact with bottom if facing from below? not as useful..
-                int face = 1; 
+            // Interact with top of block
+            // TODO: should we interact with bottom if facing from below? not as useful..
+            int face = 1; 
 
-                // Get block direction
-                int ax = x, ay = y, az = z;
-                Vector direction = getMetadataDirection(blockState.getRawData());
-                ax += direction.getBlockX();
-                ay += direction.getBlockY();
-                az += direction.getBlockZ();
-                // TODO: reach, if air?
+            // Get block direction
+            int ax = x, ay = y, az = z;
+            Vector direction = getMetadataDirection(blockState.getRawData());
+            ax += direction.getBlockX();
+            ay += direction.getBlockY();
+            az += direction.getBlockZ();
 
-                plugin.log("INTERACT as item at "+ax+","+ay+","+az);
+            // Find block to affect
 
-                boolean success = net.minecraft.server.Item.byId[item.id].interactWith(item, fakePlayer, world, ax, ay, az, face);
-                plugin.log("returned "+success);
+            // First try block directly adjacent to dispenser hole
+            World bukkitWorld = (World)(world.getWorld());
+            if (bukkitWorld.getBlockTypeIdAt(ax, ay, az) == 0) {    
+                // How about block below that..
+                ay -= 1;
+                // TODO: reach further if not valid, like player reaches target block
+                // try reaching first directly out (same y), then below, then out?
+            }
 
-                Block b = Bukkit.getWorlds().get(0).getBlockAt(ax,ay,az); 
-                plugin.log("on block "+b);
 
-                // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
-            } 
+            plugin.log("INTERACT at "+ax+","+ay+","+az);
+
+            boolean success = net.minecraft.server.Item.byId[item.id].interactWith(item, fakePlayer, world, ax, ay, az, face);
+            plugin.log("returned "+success);
+
+            // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
         } else {
             // Regular dispensing.. but possibly vertical
             int slot = tileEntity.findDispenseSlot();
