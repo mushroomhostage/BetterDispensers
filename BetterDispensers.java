@@ -229,9 +229,11 @@ class BetterDispensersListener implements Listener {
                 functions |= FUNCTION_BREAKER;
             } else if (id == plugin.getConfig().getInt("vacuum.blockID", 49 /* obsidian */)) {
                 functions |= FUNCTION_VACUUM;
-            } 
             // TODO: if any kind of container block (chest = 54, modded chest, another dispenser) 
             // functions |= FUNCTION_STORAGE
+            } else if (id == plugin.getConfig().getInt("accelerator.blockID", 41 /* gold block */)) {
+                functions |= FUNCTION_ACCELERATOR;
+            }
         }
 
         return functions;
@@ -310,6 +312,7 @@ class BetterDispensersListener implements Listener {
     public static final int FUNCTION_BREAKER    = 1 << 2;
     public static final int FUNCTION_VACUUM     = 1 << 3;
     public static final int FUNCTION_STORAGE    = 1 << 4;
+    public static final int FUNCTION_ACCELERATOR= 1 << 5;
 
     // handle up/down dispensers
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
@@ -413,7 +416,7 @@ class BetterDispensersListener implements Listener {
                 tileEntity.splitStack(i, 1);
             }
 
-            dispenseItem(blockState, world, item, x, y, z);
+            dispenseItem(blockState, world, item, x, y, z, functions);
         // TODO: uncrafter, like EnchantMore Pickaxe + Looting = reverse crafting,
         // but could use Bukkit getRecipesFor(), or QuickBench getRecipesForX(), but
         // keep in mind crafting wood logs -> planks... it needs 4 planks, not 1 (duping)
@@ -536,7 +539,7 @@ class BetterDispensersListener implements Listener {
             int slot = tileEntity.findDispenseSlot();
 
             net.minecraft.server.ItemStack item = tileEntity.splitStack(slot, 1);
-            dispenseItem(blockState, world, item, x, y, z);
+            dispenseItem(blockState, world, item, x, y, z, functions);
         }
     }
 
@@ -578,7 +581,7 @@ class BetterDispensersListener implements Listener {
 
     // Dispense an item ourselves
     // See net/minecraft/server/BlockDispenser.java dispense()
-    public void dispenseItem(BlockState blockState, net.minecraft.server.World world, net.minecraft.server.ItemStack item, int x, int y, int z) {
+    public void dispenseItem(BlockState blockState, net.minecraft.server.World world, net.minecraft.server.ItemStack item, int x, int y, int z, int functions) {
         // Get direction vector, including up/down
         double dx = 0, dz = 0, dy = 0;
         byte data = blockState.getRawData();
@@ -602,6 +605,11 @@ class BetterDispensersListener implements Listener {
             break;
         default:    // horizontal
             v = plugin.getConfig().getDouble("dispenser.velocityHorizontal", 0.1);
+        }
+
+        if ((functions & FUNCTION_ACCELERATOR) != 0) {
+            // TODO: more acceleration?
+            v *= plugin.getConfig().getDouble("accelerator.factor", 2.0);
         }
 
         plugin.log("dispensing item "+item);
