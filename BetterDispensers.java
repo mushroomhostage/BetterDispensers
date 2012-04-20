@@ -360,7 +360,7 @@ class BetterDispensersListener implements Listener {
 
             if (item == null) {
                 // not a craftable recipe
-                world.triggerEffect(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
+                failDispense(world, x, y, z);
                 event.setCancelled(true);
                 return;
             }
@@ -385,7 +385,7 @@ class BetterDispensersListener implements Listener {
 
             if (!isTool(tool)) {
                 plugin.log("trying to break with non-tool "+tool);
-                world.triggerEffect(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
+                failDispense(world, x, y, z);
                 return;
             }
 
@@ -461,7 +461,7 @@ class BetterDispensersListener implements Listener {
 
             // We can't interact with air 
             if (bukkitWorld.getBlockTypeIdAt(ax, ay, az) == 0) {
-                world.triggerEffect(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
+                failDispense(world, x, y, z);   // "failed to dispense" effect, empty click
                 return;
             }
 
@@ -481,11 +481,12 @@ class BetterDispensersListener implements Listener {
                 if (isTool(item)) {
                     damageToolInDispenser(item, slot, tileEntity);
                 } else {
-                    tileEntity.splitStack(slot, 1);
+                    // TODO: why is this already split? double-counts somewhere
+                    //tileEntity.splitStack(slot, 1);
                 }
             } else {
                 // This item is not interactable with this block
-                world.triggerEffect(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
+                failDispense(world, x, y, z);
                 return;
 
                 // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
@@ -497,6 +498,11 @@ class BetterDispensersListener implements Listener {
             net.minecraft.server.ItemStack item = tileEntity.splitStack(slot, 1);
             dispenseItem(blockState, world, item, x, y, z);
         }
+    }
+
+    // Play the "failed to dispense" effect, an empty click
+    public void failDispense(net.minecraft.server.World world, int x, int y, int z) {
+        world.triggerEffect(1001, x, y, z, 0);
     }
 
     // Get direction vector for which way the dispenser block is pointing
@@ -560,7 +566,7 @@ class BetterDispensersListener implements Listener {
 
         plugin.log("dispensing item "+item);
         if (item == null) {
-            world.triggerEffect(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
+            failDispense(world, x, y, z);
             return;
         }
 
