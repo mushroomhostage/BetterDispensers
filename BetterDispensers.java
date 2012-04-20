@@ -432,12 +432,21 @@ class BetterDispensersListener implements Listener {
             int slot = tileEntity.findDispenseSlot();
             net.minecraft.server.ItemStack item = tileEntity.getItem(slot);
 
-            if (isTool(item)) {
-                net.minecraft.server.ItemStack tool = item;
+            if (false && isBlock(item)) {
+                // TODO: place?
+                plugin.log("interact as block "+item);
 
-                damageToolInDispenser(tool, slot, tileEntity);
+            } else {
+                // damage tools, or use up items
+                if (isTool(item)) {
+                    damageToolInDispenser(item, slot, tileEntity);
+                } else {
+                    tileEntity.splitStack(slot, 1);
+                }
 
-                int face = 0;    // TODO: top?
+                // Interact with top of block
+                // TODO: should we interact with bottom if facing from below? not as useful..
+                int face = 1; 
 
                 // Get block direction
                 int ax = x, ay = y, az = z;
@@ -447,20 +456,16 @@ class BetterDispensersListener implements Listener {
                 az += direction.getBlockZ();
                 // TODO: reach, if air?
 
-                plugin.log("INTERACT at "+ax+","+ay+","+az);
+                plugin.log("INTERACT as item at "+ax+","+ay+","+az);
 
-                net.minecraft.server.Item.byId[tool.id].interactWith(tool, fakePlayer, world, ax, ay, az, face);
+                boolean success = net.minecraft.server.Item.byId[item.id].interactWith(item, fakePlayer, world, ax, ay, az, face);
+                plugin.log("returned "+success);
 
                 Block b = Bukkit.getWorlds().get(0).getBlockAt(ax,ay,az); 
-                plugin.log("block "+b);
+                plugin.log("on block "+b);
 
                 // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
-            } else if (isBlock(item)) {
-                // TODO: place
-            } else {
-                // TODO: what else?
-            }
-
+            } 
         } else {
             // Regular dispensing.. but possibly vertical
             int slot = tileEntity.findDispenseSlot();
