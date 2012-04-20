@@ -428,18 +428,7 @@ class BetterDispensersListener implements Listener {
                 b.breakNaturally(new CraftItemStack(tool));
             }
         } else if ((functions & FUNCTION_INTERACTOR) != 0) {
-            // Use item, i.e., like right-clicking hoe tills
-            int slot = tileEntity.findDispenseSlot();
-            net.minecraft.server.ItemStack item = tileEntity.getItem(slot);
-
-            // damage tools, or use up items
-            if (isTool(item)) {
-                damageToolInDispenser(item, slot, tileEntity);
-            } else {
-                tileEntity.splitStack(slot, 1);
-            }
-
-            // Interact with top of block
+           // Interact with top of block
             // TODO: should we interact with bottom if facing from below? not as useful..
             int face = 1; 
 
@@ -454,14 +443,41 @@ class BetterDispensersListener implements Listener {
 
             // First try block directly adjacent to dispenser hole
             World bukkitWorld = (World)(world.getWorld());
-            if (bukkitWorld.getBlockTypeIdAt(ax, ay, az) == 0) {    
+            int reach = plugin.getConfig().getInt("interactor.reachLimit", 7);
+            while (bukkitWorld.getBlockTypeIdAt(ax, ay, az) == 0 && reach > 0) {    
+
                 // How about block below that..
-                ay -= 1;
-                // TODO: reach further if not valid, like player reaches target block
-                // try reaching first directly out (same y), then below, then out?
+                if (bukkitWorld.getBlockTypeIdAt(ax, ay - 1, az) != 0) {
+                    ay -= 1;
+                    break;
+                }
+
+                // Nope, reach further
+                ax += direction.getBlockX();
+                az += direction.getBlockZ();
+
+                reach -= 1;
+            }
+
+            // We can't interact with air 
+            if (bukkitWorld.getBlockTypeIdAt(ax, ay, az) == 0) {
+                world.triggerEffect(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
+                return;
             }
 
 
+            // Use item, i.e., like right-clicking hoe tills
+            int slot = tileEntity.findDispenseSlot();
+            net.minecraft.server.ItemStack item = tileEntity.getItem(slot);
+
+            // damage tools, or use up items
+            if (isTool(item)) {
+                damageToolInDispenser(item, slot, tileEntity);
+            } else {
+                tileEntity.splitStack(slot, 1);
+            }
+
+ 
             plugin.log("INTERACT at "+ax+","+ay+","+az);
 
             boolean success = net.minecraft.server.Item.byId[item.id].interactWith(item, fakePlayer, world, ax, ay, az, face);
