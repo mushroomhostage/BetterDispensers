@@ -470,20 +470,26 @@ class BetterDispensersListener implements Listener {
             int slot = tileEntity.findDispenseSlot();
             net.minecraft.server.ItemStack item = tileEntity.getItem(slot);
 
-            // damage tools, or use up items
-            if (isTool(item)) {
-                damageToolInDispenser(item, slot, tileEntity);
-            } else {
-                tileEntity.splitStack(slot, 1);
-            }
 
- 
             plugin.log("INTERACT at "+ax+","+ay+","+az);
 
             boolean success = net.minecraft.server.Item.byId[item.id].interactWith(item, fakePlayer, world, ax, ay, az, face);
             plugin.log("returned "+success);
 
-            // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
+            if (success) {
+                // Damage tools, or use up items
+                if (isTool(item)) {
+                    damageToolInDispenser(item, slot, tileEntity);
+                } else {
+                    tileEntity.splitStack(slot, 1);
+                }
+            } else {
+                // This item is not interactable with this block
+                world.triggerEffect(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
+                return;
+
+                // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
+            }
         } else {
             // Regular dispensing.. but possibly vertical
             int slot = tileEntity.findDispenseSlot();
