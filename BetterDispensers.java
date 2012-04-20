@@ -273,6 +273,19 @@ class BetterDispensersListener implements Listener {
         }
     }
 
+    // Get whether an item is a tool, which can be damaged
+    public boolean isTool(net.minecraft.server.ItemStack item) {
+        // this is d() obfuscated
+        return net.minecraft.server.Item.byId[item.id].getMaxDurability() > 0;
+    }
+
+    // TODO: can we NOT hardcode this?
+    public static final int MAX_BLOCK_ID = 256; // minus 1
+
+    public boolean isBlock(net.minecraft.server.ItemStack item) {
+        return item.id < MAX_BLOCK_ID;
+    }
+
     // Decrease durability of a tool, as if it was used, clearing if it is all used up
     public void damageToolInDispenser(net.minecraft.server.ItemStack tool, int slot, net.minecraft.server.TileEntityDispenser tileEntity) {
         // TODO: actually check if it is a tool?
@@ -360,10 +373,21 @@ class BetterDispensersListener implements Listener {
             }
 
             dispenseItem(blockState, world, item, x, y, z);
+        // TODO: uncrafter, like EnchantMore Pickaxe + Looting = reverse crafting,
+        // but could use Bukkit getRecipesFor(), or QuickBench getRecipesForX(), but
+        // keep in mind crafting wood logs -> planks... it needs 4 planks, not 1 (duping)
+        // see also Dismantler http://dev.bukkit.org/server-mods/dismantler/
+
         } else if ((functions & FUNCTION_BREAKER) != 0) {
             int slot = tileEntity.findDispenseSlot();
 
             net.minecraft.server.ItemStack tool = tileEntity.getItem(slot);
+
+            if (!isTool(tool)) {
+                plugin.log("trying to break with non-tool "+tool);
+                world.triggerEffect(1001, x, y, z, 0);   // "failed to dispense" effect, empty click
+                return;
+            }
 
             damageToolInDispenser(tool, slot, tileEntity);
 
@@ -406,28 +430,36 @@ class BetterDispensersListener implements Listener {
         } else if ((functions & FUNCTION_INTERACTOR) != 0) {
             // Use item, i.e., like right-clicking hoe tills
             int slot = tileEntity.findDispenseSlot();
-            net.minecraft.server.ItemStack tool = tileEntity.getItem(slot);
+            net.minecraft.server.ItemStack item = tileEntity.getItem(slot);
 
-            damageToolInDispenser(tool, slot, tileEntity);
+            if (isTool(item)) {
+                net.minecraft.server.ItemStack tool = item;
 
-            int face = 0;    // TODO: top?
+                damageToolInDispenser(tool, slot, tileEntity);
 
-            // Get block direction
-            int ax = x, ay = y, az = z;
-            Vector direction = getMetadataDirection(blockState.getRawData());
-            ax += direction.getBlockX();
-            ay += direction.getBlockY();
-            az += direction.getBlockZ();
-            // TODO: reach, if air?
+                int face = 0;    // TODO: top?
 
-            plugin.log("INTERACT at "+ax+","+ay+","+az);
+                // Get block direction
+                int ax = x, ay = y, az = z;
+                Vector direction = getMetadataDirection(blockState.getRawData());
+                ax += direction.getBlockX();
+                ay += direction.getBlockY();
+                az += direction.getBlockZ();
+                // TODO: reach, if air?
 
-            net.minecraft.server.Item.byId[tool.id].interactWith(tool, fakePlayer, world, ax, ay, az, face);
+                plugin.log("INTERACT at "+ax+","+ay+","+az);
 
-            Block b = Bukkit.getWorlds().get(0).getBlockAt(ax,ay,az); 
-            plugin.log("block "+b);
+                net.minecraft.server.Item.byId[tool.id].interactWith(tool, fakePlayer, world, ax, ay, az, face);
 
-            // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
+                Block b = Bukkit.getWorlds().get(0).getBlockAt(ax,ay,az); 
+                plugin.log("block "+b);
+
+                // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
+            } else if (isBlock(item)) {
+                // TODO: place
+            } else {
+                // TODO: what else?
+            }
 
         } else {
             // Regular dispensing.. but possibly vertical
