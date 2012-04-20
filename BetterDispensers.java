@@ -206,7 +206,7 @@ class BetterDispensersListener implements Listener {
         fakePlayer = new net.minecraft.server.EntityPlayer(
             console,
             ((CraftWorld)Bukkit.getWorlds().get(0)).getHandle(), // TODO: does it need to be in each world?
-            "[BetterDispensers]",
+            "[" + plugin.getName() + "]",
             manager);
 
 
@@ -273,6 +273,25 @@ class BetterDispensersListener implements Listener {
         }
     }
 
+    // Decrease durability of a tool, as if it was used, clearing if it is all used up
+    public void damageToolInDispenser(net.minecraft.server.ItemStack tool, int slot, net.minecraft.server.TileEntityDispenser tileEntity) {
+        // TODO: actually check if it is a tool?
+
+        try {
+            // TODO: more than 1 damage for 'improper' uses
+            tool.damage(1, fakePlayer);
+        } catch (NullPointerException e) {
+            // TODO: check if one use left, instead..
+
+            // yeah yeah I know.. hackish workaround
+            // damage() on a tool on its last use will try to remove the tool
+            // from the player's inventory, but we don't have a player inventory, so
+            // it will NPE -- catch this, and clear the item ourselves
+            tileEntity.setItem(slot, null);
+        }
+    }
+
+
     public static final int FUNCTION_CRAFTER    = 1 << 0;
     public static final int FUNCTION_INTERACTOR = 1 << 1;
     public static final int FUNCTION_BREAKER    = 1 << 2;
@@ -306,8 +325,6 @@ class BetterDispensersListener implements Listener {
             return;
         }
 
-        net.minecraft.server.ItemStack item;
-
         if ((functions & FUNCTION_CRAFTER) != 0) {
             // Craft dispenser matrix into crafting matrix
             ItemStack[] contents = dispenser.getInventory().getContents();
@@ -326,7 +343,7 @@ class BetterDispensersListener implements Listener {
             }
 
             // Dispense crafting result
-            item = net.minecraft.server.CraftingManager.getInstance().craft(matrix);
+            net.minecraft.server.ItemStack item = net.minecraft.server.CraftingManager.getInstance().craft(matrix);
 
             if (item == null) {
                 // not a craftable recipe
@@ -343,44 +360,12 @@ class BetterDispensersListener implements Listener {
             }
 
             dispenseItem(blockState, world, item, x, y, z);
-        } else if ((functions & FUNCTION_INTERACTOR) != 0) {
-            // Use item, i.e., like right-clicking hoe tills
-            int slot = tileEntity.findDispenseSlot();
-            // TODO: take tool damage if is a tool, instead of removing!
-            item = tileEntity.splitStack(slot, 1);
-
-            int face = 0;    // TODO: top?
-
-            // Get block direction
-            int ax = x, ay = y, az = z;
-            Vector direction = getMetadataDirection(blockState.getRawData());
-            ax += direction.getBlockX();
-            ay += direction.getBlockY();
-            az += direction.getBlockZ();
-            // TODO: reach, if air?
-
-            plugin.log("INTERACT at "+ax+","+ay+","+az);
-
-            net.minecraft.server.Item.byId[item.id].interactWith(item, fakePlayer, world, ax, ay, az, face);
-
-            Block b = Bukkit.getWorlds().get(0).getBlockAt(ax,ay,az); 
-            plugin.log("block "+b);
-
-            // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
         } else if ((functions & FUNCTION_BREAKER) != 0) {
             int slot = tileEntity.findDispenseSlot();
 
             net.minecraft.server.ItemStack tool = tileEntity.getItem(slot);
 
-            try {
-                tool.damage(1, fakePlayer);
-            } catch (NullPointerException e) {
-                // yeah yeah I know.. hackish workaround
-                // damage() on a tool on its last use will try to remove the tool
-                // from the player's inventory, but we don't have a player inventory, so
-                // it will NPE -- catch this, and clear the item ourselves
-                tileEntity.setItem(slot, null);
-            }
+            damageToolInDispenser(tool, slot, tileEntity);
 
             // Get block direction
             int ax = x, ay = y, az = z;
@@ -400,7 +385,7 @@ class BetterDispensersListener implements Listener {
             net.minecraft.server.EntityPlayer fakeBreakerPlayer = new net.minecraft.server.EntityPlayer(
                 console,
                 world,
-                "[BetterDispensers]",
+                "[" + plugin.getName() + "]",
                 manager);
 
             Player fakeBreakerPlayerBukkit = fakePlayer.getBukkitEntity();
@@ -418,11 +403,37 @@ class BetterDispensersListener implements Listener {
                 // TODO: and don't break bedrock..
                 b.breakNaturally(new CraftItemStack(tool));
             }
+        } else if ((functions & FUNCTION_INTERACTOR) != 0) {
+            // Use item, i.e., like right-clicking hoe tills
+            int slot = tileEntity.findDispenseSlot();
+            net.minecraft.server.ItemStack tool = tileEntity.getItem(slot);
+
+            damageToolInDispenser(tool, slot, tileEntity);
+
+            int face = 0;    // TODO: top?
+
+            // Get block direction
+            int ax = x, ay = y, az = z;
+            Vector direction = getMetadataDirection(blockState.getRawData());
+            ax += direction.getBlockX();
+            ay += direction.getBlockY();
+            az += direction.getBlockZ();
+            // TODO: reach, if air?
+
+            plugin.log("INTERACT at "+ax+","+ay+","+az);
+
+            net.minecraft.server.Item.byId[tool.id].interactWith(tool, fakePlayer, world, ax, ay, az, face);
+
+            Block b = Bukkit.getWorlds().get(0).getBlockAt(ax,ay,az); 
+            plugin.log("block "+b);
+
+            // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
+
         } else {
             // Regular dispensing.. but possibly vertical
             int slot = tileEntity.findDispenseSlot();
 
-            item = tileEntity.splitStack(slot, 1);
+            net.minecraft.server.ItemStack item = tileEntity.splitStack(slot, 1);
             dispenseItem(blockState, world, item, x, y, z);
         }
     }
