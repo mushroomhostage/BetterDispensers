@@ -324,18 +324,59 @@ class BetterDispensersListener implements Listener {
         Dispenser dispenser = (Dispenser)blockState;
 
         // Override ALL dispensing everywhere and do it ourselves
+        // TODO: option to not override horizontal item dispensing?? 
+        // We're breaking Balkon's Weapon Mod cannonballs in dispensers..
         event.setCancelled(true);
 
         int functions = getDispenserFunctions(block);
         plugin.log("functions="+functions);
 
         net.minecraft.server.World world = ((CraftWorld)block.getWorld()).getHandle();
+        World bukkitWorld = (World)(world.getWorld());
         int x = block.getX(), y = block.getY(), z = block.getZ();
 
         net.minecraft.server.TileEntityDispenser tileEntity = (net.minecraft.server.TileEntityDispenser)world.getTileEntity(x, y, z);
         if (tileEntity == null) {
             plugin.log("no dispenser tile entity at "+block);
             return;
+        }
+        
+        if ((functions & FUNCTION_VACUUM) != 0) {
+            // TODO: we won't be called if the dispenser is empty! since its not dispensing.. 
+            // so we can't suck up items unless we already have any, run dry, things break
+
+            List<Entity> entities = bukkitWorld.getEntities();  // TODO: can we only get nearby? there is for other entities near us but not blocks..
+            for (Entity entity: entities) {
+                if (!entity.getWorld().equals(bukkitWorld)) {
+                    continue;
+                }
+
+                double d2 = entity.getLocation().distanceSquared(block.getLocation());
+                if (d2 > plugin.getConfig().getDouble("vacuum.reachLimitSquared", 64.0)) {
+                    continue;
+                }
+
+                if (!(entity instanceof Item)) {
+                    // TODO: vacuum up other entities maybe?
+                    // arrows? but clear non-player, not pickup..
+                    // boats, minecarts? could be useful
+                    continue;
+                }
+
+                // Suck up items into our inventory
+                Item itemEntity = (Item)entity;
+                ItemStack item = itemEntity.getItemStack();
+                HashMap<Integer,ItemStack> excess = dispenser.getInventory().addItem(item);
+                plugin.log("vacuumed up "+ item);
+                itemEntity.remove();
+                if (excess.size() != 0) {
+                    // Spit back out what couldn't fit
+                    plugin.log("excess "+excess);
+                    // Note this seems to slightly change the drop location..
+                    bukkitWorld.dropItemNaturally(itemEntity.getLocation(), excess.get(0));
+                }
+
+            }
         }
 
         if ((functions & FUNCTION_CRAFTER) != 0) {
@@ -442,7 +483,6 @@ class BetterDispensersListener implements Listener {
             // Find block to affect
 
             // First try block directly adjacent to dispenser hole
-            World bukkitWorld = (World)(world.getWorld());
             int reach = plugin.getConfig().getInt("interactor.reachLimit", 7);
             while (bukkitWorld.getBlockTypeIdAt(ax, ay, az) == 0 && reach > 0) {    
 
