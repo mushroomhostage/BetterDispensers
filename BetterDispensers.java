@@ -957,6 +957,18 @@ class BetterDispensersListener implements Listener {
                 adjacentBlock.setTypeId(liquid, true);
             }
             // Note, will keep the bucket (or any other container) if bucketsKeep was set elsehwere
+        } else if (item.id == net.minecraft.server.Item.BOAT.id && plugin.getConfig().getBoolean("boatEnable", true)) {
+            // Launch boat
+            // ..one unit further away from the adjacent block, so it has room
+            Location location = adjacentBlock.getLocation().add(dx, 0, dz);
+
+            location.getWorld().spawn(location, Boat.class);
+
+        } else if (item.id == net.minecraft.server.Item.MINECART.id && plugin.getConfig().getBoolean("cartEnable", true)) {
+            // Launch minecart
+
+            Location location = adjacentBlock.getLocation();
+            location.getWorld().spawn(location, Minecart.class);
         } else if (plugin.getConfig().getBoolean("dispenser.itemEnable", true)) {
             // non-projectile item
             net.minecraft.server.EntityItem entityItem = new net.minecraft.server.EntityItem(world, x0, y0 - 0.3d, z0, item);
