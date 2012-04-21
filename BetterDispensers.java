@@ -229,10 +229,13 @@ class BetterDispensersListener implements Listener {
                 functions |= FUNCTION_BREAKER;
             } else if (id == plugin.getConfig().getInt("vacuum.blockID", 49 /* obsidian */)) {
                 functions |= FUNCTION_VACUUM;
-            // TODO: if any kind of container block (chest = 54, modded chest, another dispenser) 
-            // functions |= FUNCTION_STORAGE
             } else if (id == plugin.getConfig().getInt("accelerator.blockID", 41 /* gold block */)) {
                 functions |= FUNCTION_ACCELERATOR;
+            }
+
+            BlockState bs = near.getState();
+            if (bs instanceof InventoryHolder) {        // chest, furnace, another dispenser, etc.
+                functions |= FUNCTION_STORAGE;
             }
         }
 
@@ -343,8 +346,10 @@ class BetterDispensersListener implements Listener {
             plugin.log("no dispenser tile entity at "+block);
             return;
         }
-        
+       
         if ((functions & FUNCTION_VACUUM) != 0) {
+            // Vacuum up nearby item drops
+
             // TODO: we won't be called if the dispenser is empty! since its not dispensing.. 
             // so we can't suck up items unless we already have any, run dry, things break
 
@@ -380,6 +385,10 @@ class BetterDispensersListener implements Listener {
                 }
 
             }
+        }
+
+        if ((functions & FUNCTION_STORAGE) != 0) {
+            plugin.log.info("STORAGE");
         }
 
         if ((functions & FUNCTION_CRAFTER) != 0) {
@@ -423,6 +432,7 @@ class BetterDispensersListener implements Listener {
         // see also Dismantler http://dev.bukkit.org/server-mods/dismantler/
 
         } else if ((functions & FUNCTION_BREAKER) != 0) {
+            // Break blocks
             int slot = tileEntity.findDispenseSlot();
 
             net.minecraft.server.ItemStack tool = tileEntity.getItem(slot);
@@ -472,7 +482,9 @@ class BetterDispensersListener implements Listener {
                 b.breakNaturally(new CraftItemStack(tool));
             }
         } else if ((functions & FUNCTION_INTERACTOR) != 0) {
-           // Interact with top of block
+            // Right-click on items
+
+            // Interact with top of block
             // TODO: should we interact with bottom if facing from below? not as useful..
             int face = 1; 
 
@@ -535,7 +547,7 @@ class BetterDispensersListener implements Listener {
                 // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
             }
         } else {
-            // Regular dispensing.. but possibly vertical
+            // Regular dispensing.. but possibly vertical or with special items
             int slot = tileEntity.findDispenseSlot();
 
             net.minecraft.server.ItemStack item = tileEntity.splitStack(slot, 1);
