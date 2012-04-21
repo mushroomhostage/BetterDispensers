@@ -244,7 +244,7 @@ class BetterDispensersListener implements Listener {
                 functions |= FUNCTION_ACCELERATOR;
             } else if (id == plugin.getConfig().getInt("turret.blockID", 45 /* bricks */)) {
                 functions |= FUNCTION_TURRET;
-            } else if (id == plugin.getConfig().getInt("filler.blockID", 5 /* filler */)) {
+            } else if (id == plugin.getConfig().getInt("filler.blockID", 5 /* plank */)) {
                 functions |= FUNCTION_FILLER;
             }
 
@@ -473,7 +473,7 @@ class BetterDispensersListener implements Listener {
 
             }
 
-            dispenseItem(blockState, world, item, x, y, z, functions);
+            dispenseItem(dispenser, world, item, x, y, z, functions);
         // TODO: uncrafter, like EnchantMore Pickaxe + Looting = reverse crafting,
         // but could use Bukkit getRecipesFor(), or QuickBench getRecipesForX(), but
         // keep in mind crafting wood logs -> planks... it needs 4 planks, not 1 (duping)
@@ -525,6 +525,8 @@ class BetterDispensersListener implements Listener {
 
             // .. crucially, the player must be holding the item which broke the block
             // This is required for compatibility with EnchantMore etc.
+            // (.. but sadly, plugins which change drops don't override getDrops(), so the item
+            // will always be dropped in the world, not routed to any pipes)
             fakeBreakerPlayerBukkit.setItemInHand(new CraftItemStack(tool));
 
             BlockBreakEvent breakEvent = new BlockBreakEvent(b, fakeBreakerPlayerBukkit);
@@ -540,7 +542,7 @@ class BetterDispensersListener implements Listener {
                 for (ItemStack drop: drops) {
                     net.minecraft.server.ItemStack item = (new CraftItemStack(drop)).getHandle();
 
-                    dispenseItem(blockState, world, item, x, y, z, functions);
+                    dispenseItem(dispenser, world, item, x, y, z, functions);
                 }
             }
         } else if ((functions & FUNCTION_INTERACTOR) != 0) {
@@ -614,7 +616,7 @@ class BetterDispensersListener implements Listener {
 
             net.minecraft.server.ItemStack item = takeItem(tileEntity, slot, augmentStorage);
 
-            dispenseItem(blockState, world, item, x, y, z, functions);
+            dispenseItem(dispenser, world, item, x, y, z, functions);
         }
 
 
@@ -757,12 +759,69 @@ class BetterDispensersListener implements Listener {
         return new Vector(dx, dy, dz);
     }
 
+    private void filler(Dispenser dispenser, net.minecraft.server.ItemStack item) {
+        // Locate the connecting 'pipe'
+        Block connector = null;
+        Location connectorLocation = null;
+        for (BlockFace direction: surfaceDirections) {
+            Block near = dispenser.getBlock().getRelative(direction);
+
+            if (near.getTypeId() == plugin.getConfig().getInt("filler.blockID", 5 /* plank */)) {
+                connector = near;
+                connectorLocation = near.getLocation();
+                break;
+            }
+        }
+        if (connector == null) {
+            plugin.log("Failed to find connecting plank for filler");
+            // This should not happen, so just throw it on the ground
+            dispenser.getBlock().getLocation().getWorld().dropItemNaturally(dispenser.getBlock().getLocation(), new CraftItemStack(item));
+            return;
+        }
+
+        InventoryHolder container = null;
+        Location containerLocation = null;
+
+        // Find destination of pipe, any inventory holder block
+        // TODO: traverse connecting pipe, out of glass maybe? like http://dev.bukkit.org/server-mods/machinacraft/
+        for (BlockFace direction: surfaceDirections) {
+            Block near = connector.getRelative(direction);
+            if (near == dispenser.getBlock()) {
+                continue;
+            }
+
+            BlockState blockState = near.getState();
+            if (blockState instanceof InventoryHolder) {
+                plugin.log("Found filler destination! " + near);
+                container = (InventoryHolder)blockState;
+                containerLocation = near.getLocation();
+                break;
+            }
+        }
+
+        if (container == null) {
+            plugin.log("No destination");
+            if (plugin.getConfig().getBoolean("filler.unconnectedDrop", true)) {
+                connectorLocation.getWorld().dropItemNaturally(connectorLocation, new CraftItemStack(item));
+            }
+            return;
+        }
+
+        // Add to destination inventory
+        HashMap<Integer,ItemStack> excess = container.getInventory().addItem(new CraftItemStack(item));
+        if (excess.size() != 0) {
+            if (plugin.getConfig().getBoolean("filler.overflowDrop", true)) {
+                containerLocation.getWorld().dropItemNaturally(containerLocation, excess.get(0));
+            }
+        }
+    }
+
     // Dispense an item ourselves
     // See net/minecraft/server/BlockDispenser.java dispense()
-    public void dispenseItem(BlockState blockState, net.minecraft.server.World world, net.minecraft.server.ItemStack item, int x, int y, int z, int functions) {
+    public void dispenseItem(Dispenser dispenser, net.minecraft.server.World world, net.minecraft.server.ItemStack item, int x, int y, int z, int functions) {
         // Get direction vector, including up/down
         double dx = 0, dz = 0, dy = 0;
-        byte data = blockState.getRawData();
+        byte data = dispenser.getRawData();
 
         Vector direction = getMetadataDirection(data);
 
@@ -786,8 +845,15 @@ class BetterDispensersListener implements Listener {
         }
 
         if ((functions & FUNCTION_ACCELERATOR) != 0) {
+            // Speedy thing goes out
             // TODO: more acceleration?
             v *= plugin.getConfig().getDouble("accelerator.factor", 2.0);
+        }
+
+        if ((functions & FUNCTION_FILLER) != 0) {
+            // Fill an inventory instead of dispensing into the world
+            filler(dispenser, item);
+            return;
         }
 
         plugin.log("dispensing item "+item);
