@@ -242,7 +242,7 @@ class BetterDispensersListener implements Listener {
         return functions;
     }
 
-    // accept arrows inside dispensers
+    // Accept arrows inside dispensers
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
     public void onProjectileHit(ProjectileHitEvent event) {
         Entity entity = event.getEntity();
@@ -250,6 +250,42 @@ class BetterDispensersListener implements Listener {
         // must schedule a task since arrow collision detection hasn't happened yet
         Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new BetterDispensersProjectileHitTask(entity, plugin));
     }
+
+    // Accept item drops inside vacuum dispensers
+    @EventHandler(priority=EventPriority.MONITOR, ignoreCancelled=true)
+    public void onPlayerDropItem(PlayerDropItemEvent event) {
+        Player player = event.getPlayer();
+        final Item itemEntity = event.getItemDrop();
+
+        Location location = itemEntity.getLocation();
+        int r = plugin.getConfig().getInt("vacuum.itemDropRange", 2);
+        for (int dx = -r; dx <= r; dx += 1) {
+            for (int dy = -r; dy <= r; dy += 1) {
+                for (int dz = -r; dz <= r; dz += 1) {
+                    Block block = location.clone().add(dx,dy,dz).getBlock();
+
+                    if (block.getType() == Material.DISPENSER) {
+                        int functions = getDispenserFunctions(block);
+                        if ((functions & FUNCTION_VACUUM) != 0) {
+                            final Dispenser dispenser = (Dispenser)block.getState();
+
+                            // Add drop item to dispenser inventory, with a delay purely for visual purposes
+                            Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(
+                                plugin,
+                                new Runnable() {
+                                    public void run() {
+                                        plugin.log("vacuum accept player drop item");
+                                        vacuumItemDrop(itemEntity, dispenser.getInventory());
+                                    }
+                                },
+                                plugin.getConfig().getInt("vacuum.itemDropDelayTicks", 10));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
     
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
@@ -372,18 +408,7 @@ class BetterDispensersListener implements Listener {
                 }
 
                 // Suck up items into our inventory
-                Item itemEntity = (Item)entity;
-                ItemStack item = itemEntity.getItemStack();
-                HashMap<Integer,ItemStack> excess = dispenser.getInventory().addItem(item);
-                plugin.log("vacuumed up "+ item);
-                itemEntity.remove();
-                if (excess.size() != 0) {
-                    // Spit back out what couldn't fit
-                    plugin.log("excess "+excess);
-                    // Note this seems to slightly change the drop location..
-                    bukkitWorld.dropItemNaturally(itemEntity.getLocation(), excess.get(0));
-                }
-
+                vacuumItemDrop((Item)entity, dispenser.getInventory());
             }
         }
 
@@ -572,6 +597,21 @@ class BetterDispensersListener implements Listener {
             dispenseItem(blockState, world, item, x, y, z, functions);
         }
     }
+
+    // Vacuum up an item entity into an inventory
+    private void vacuumItemDrop(Item itemEntity, Inventory inventory) {
+        ItemStack item = itemEntity.getItemStack();
+        HashMap<Integer,ItemStack> excess = inventory.addItem(item);
+        plugin.log("vacuumed up "+ item);
+        itemEntity.remove();
+        if (excess.size() != 0) {
+            // Spit back out what couldn't fit
+            plugin.log("excess "+excess);
+            // Note this seems to slightly change the drop location..
+            itemEntity.getWorld().dropItemNaturally(itemEntity.getLocation(), excess.get(0));
+        }
+    }
+
 
     // Take an item from the dispenser, or from its augmented storage inventory
     private net.minecraft.server.ItemStack takeItem(net.minecraft.server.TileEntityDispenser tileEntity, int slot, InventoryHolder augmentStorage) {
@@ -913,6 +953,7 @@ class BetterDispensersListener implements Listener {
         event.setCancelled(true);
     }
     */
+
 }
 
 public class BetterDispensers extends JavaPlugin {
