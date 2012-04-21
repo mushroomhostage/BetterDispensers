@@ -398,13 +398,16 @@ class BetterDispensersListener implements Listener {
             // so we can't suck up items unless we already have any, run dry, things break
 
             List<Entity> entities = bukkitWorld.getEntities();  // TODO: can we only get nearby? there is for other entities near us but not blocks..
+            double reachLimit = plugin.getConfig().getDouble("vacuum.reachLimit", 64.0);
+            double reachLimitSquared = reachLimit * reachLimit;
             for (Entity entity: entities) {
                 if (!entity.getWorld().equals(bukkitWorld)) {
                     continue;
                 }
 
                 double d2 = entity.getLocation().distanceSquared(block.getLocation());
-                if (d2 > plugin.getConfig().getDouble("vacuum.reachLimitSquared", 64.0)) {
+                if (d2 > reachLimitSquared) {
+                    // TODO: gold block to increase reach limit?
                     continue;
                 }
 
@@ -912,7 +915,7 @@ class BetterDispensersListener implements Listener {
         if ((functions & FUNCTION_ACCELERATOR) != 0) {
             // Speedy thing goes out
             // TODO: more acceleration?
-            v *= plugin.getConfig().getDouble("accelerator.factor", 2.0);
+            v *= plugin.getConfig().getDouble("accelerator.velocityFactorY", 2.0);
         }
 
         if ((functions & FUNCTION_FILLER) != 0) {
