@@ -232,19 +232,19 @@ class BetterDispensersListener implements Listener {
             Block near = origin.getRelative(direction);
 
             int id = near.getTypeId();
-            if (id == plugin.getConfig().getInt("crafter.blockID", 58 /* crafting table */)) {
+            if (id == plugin.getConfig().getInt("crafter.blockID", 58 /* crafting table */) && plugin.getConfig().getBoolean("crafter.enable", true)) {
                 functions |= FUNCTION_CRAFTER;
-            } else if (id == plugin.getConfig().getInt("interactor.blockID", 22 /* lapis block */)) {
+            } else if (id == plugin.getConfig().getInt("interactor.blockID", 22 /* lapis block */) && plugin.getConfig().getBoolean("interactor.enable", true)) {
                 functions |= FUNCTION_INTERACTOR;
-            } else if (id == plugin.getConfig().getInt("breaker.blockID", 42 /* iron block */)) {
+            } else if (id == plugin.getConfig().getInt("breaker.blockID", 42 /* iron block */) && plugin.getConfig().getBoolean("breaker.enable", true)) {
                 functions |= FUNCTION_BREAKER;
-            } else if (id == plugin.getConfig().getInt("vacuum.blockID", 49 /* obsidian */)) {
+            } else if (id == plugin.getConfig().getInt("vacuum.blockID", 49 /* obsidian */) && plugin.getConfig().getBoolean("vacuum.enable", true)) {
                 functions |= FUNCTION_VACUUM;
-            } else if (id == plugin.getConfig().getInt("accelerator.blockID", 41 /* gold block */)) {
+            } else if (id == plugin.getConfig().getInt("accelerator.blockID", 41 /* gold block */) && plugin.getConfig().getBoolean("accelerator.enable", true)) {
                 functions |= FUNCTION_ACCELERATOR;
-            } else if (id == plugin.getConfig().getInt("turret.blockID", 45 /* bricks */)) {
+            } else if (id == plugin.getConfig().getInt("turret.blockID", 45 /* bricks */) && plugin.getConfig().getBoolean("turret.enable", true)) {
                 functions |= FUNCTION_TURRET;
-            } else if (id == plugin.getConfig().getInt("filler.blockID", 5 /* plank */)) {
+            } else if (id == plugin.getConfig().getInt("filler.blockID", 5 /* plank */) && plugin.getConfig().getBoolean("filler.enable", true)) {
                 functions |= FUNCTION_FILLER;
             }
 
