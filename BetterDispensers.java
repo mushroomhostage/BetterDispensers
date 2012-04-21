@@ -909,7 +909,7 @@ class BetterDispensersListener implements Listener {
             net.minecraft.server.EntityThrownExpBottle bottle = new net.minecraft.server.EntityThrownExpBottle(world, x0, y0, z0);
             bottle.a(dx, v, dz, 
                 (float)plugin.getConfig().getDouble("dispenser.expbottleForce", 1.1),
-                (float)plugin.getConfig().getDouble("dispenser.expbottlepread", 6.0));
+                (float)plugin.getConfig().getDouble("dispenser.expbottleSpread", 6.0));
             entity = (net.minecraft.server.Entity)bottle;
         } else if (item.id == net.minecraft.server.Item.MONSTER_EGG.id) {
             net.minecraft.server.ItemMonsterEgg.a(world, item.getData(), x0 + dx*0.3, y0 - 0.3, z0 + dz*0.3);
@@ -924,6 +924,32 @@ class BetterDispensersListener implements Listener {
                      random.nextGaussian() * plugin.getConfig().getDouble("dispenser.fireballRandomMotionY", 0.05),
                 dz + random.nextGaussian() * plugin.getConfig().getDouble("dispenser.fireballRandomMotionZ", 0.05));
             entity = (net.minecraft.server.Entity)fire;
+        } else if (item.id == net.minecraft.server.Block.TNT.id) {
+            net.minecraft.server.EntityTNTPrimed tnt = new net.minecraft.server.EntityTNTPrimed(world, x0, y0, z0);
+            // Primed TNT is not a projectile so it doesn't have the same a(dx,v,dz,force,spread) method
+
+            /*
+            tnt.a(dx, v, dz, 
+                (float)plugin.getConfig().getDouble("dispenser.tntForce", 1.1),
+                (float)plugin.getConfig().getDouble("dispenser.tntSpread", 6.0));
+                */
+
+            // Set the motion ourselves, like an item entity
+            double fuzz = random.nextDouble() * 0.1 + 0.2;  // d3
+            double motX = dx * fuzz;
+            double motY = v * plugin.getConfig().getDouble("dispenser.velocityItemFactor", 2.0);
+            double motZ = dz * fuzz;
+
+            motX += random.nextGaussian() * plugin.getConfig().getDouble("dispenser.itemRandomMotionX", 0.0075 * 6.0);
+            motY += random.nextGaussian() * plugin.getConfig().getDouble("dispenser.itemRandomMotionY", 0.0075 * 6.0);
+            motZ += random.nextGaussian() * plugin.getConfig().getDouble("dispenser.itemRandomMotionZ", 0.0075 * 6.0);
+
+            tnt.motX = motX;
+            tnt.motY = motY;
+            tnt.motZ = motZ;
+
+
+            entity = (net.minecraft.server.Entity)tnt;
         } else {
             // non-projectile item
             net.minecraft.server.EntityItem entityItem = new net.minecraft.server.EntityItem(world, x0, y0 - 0.3d, z0, item);
