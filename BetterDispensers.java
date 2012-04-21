@@ -390,6 +390,8 @@ class BetterDispensersListener implements Listener {
             plugin.log("no dispenser tile entity at "+block);
             return;
         }
+
+        Vector dispenseDirection = getMetadataDirection(blockState.getRawData());
        
         if ((functions & FUNCTION_VACUUM) != 0) {
             // Vacuum up nearby item drops
@@ -475,7 +477,7 @@ class BetterDispensersListener implements Listener {
 
             }
 
-            dispenseItem(dispenser, world, item, x, y, z, functions);
+            dispenseItem(dispenser, world, item, x, y, z, functions, dispenseDirection);
         // TODO: uncrafter, like EnchantMore Pickaxe + Looting = reverse crafting,
         // but could use Bukkit getRecipesFor(), or QuickBench getRecipesForX(), but
         // keep in mind crafting wood logs -> planks... it needs 4 planks, not 1 (duping)
@@ -495,17 +497,16 @@ class BetterDispensersListener implements Listener {
 
             // Get block direction
             int ax = x, ay = y, az = z;
-            Vector direction = getMetadataDirection(blockState.getRawData());
-            ax += direction.getBlockX();
-            ay += direction.getBlockY();
-            az += direction.getBlockZ();
+            ax += dispenseDirection.getBlockX();
+            ay += dispenseDirection.getBlockY();
+            az += dispenseDirection.getBlockZ();
 
             // Reach linearly (note this is different from the staggered surface reach of the interactor)
             int reach = plugin.getConfig().getInt("breaker.reachLimit", 7);
             while (bukkitWorld.getBlockTypeIdAt(ax, ay, az) == 0 && reach > 0) {    
-                ax += direction.getBlockX();
-                ay += direction.getBlockY();
-                az += direction.getBlockZ();
+                ax += dispenseDirection.getBlockX();
+                ay += dispenseDirection.getBlockY();
+                az += dispenseDirection.getBlockZ();
                 reach -= 1;
             }
 
@@ -561,7 +562,7 @@ class BetterDispensersListener implements Listener {
                 for (ItemStack drop: drops) {
                     net.minecraft.server.ItemStack item = (new CraftItemStack(drop)).getHandle();
 
-                    dispenseItem(dispenser, world, item, x, y, z, functions);
+                    dispenseItem(dispenser, world, item, x, y, z, functions, dispenseDirection);
                 }
             }
         } else if ((functions & FUNCTION_INTERACTOR) != 0) {
@@ -573,10 +574,9 @@ class BetterDispensersListener implements Listener {
 
             // Get block direction
             int ax = x, ay = y, az = z;
-            Vector direction = getMetadataDirection(blockState.getRawData());
-            ax += direction.getBlockX();
-            ay += direction.getBlockY();
-            az += direction.getBlockZ();
+            ax += dispenseDirection.getBlockX();
+            ay += dispenseDirection.getBlockY();
+            az += dispenseDirection.getBlockZ();
 
             // Find block to affect
 
@@ -591,8 +591,8 @@ class BetterDispensersListener implements Listener {
                 }
 
                 // Nope, reach further
-                ax += direction.getBlockX();
-                az += direction.getBlockZ();
+                ax += dispenseDirection.getBlockX();
+                az += dispenseDirection.getBlockZ();
 
                 reach -= 1;
             }
@@ -630,12 +630,14 @@ class BetterDispensersListener implements Listener {
                 // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
             }
         } else {
+
             // Item dispensing
             int slot = tileEntity.findDispenseSlot();
 
-            net.minecraft.server.ItemStack item = takeItem(tileEntity, slot, augmentStorage, plugin.getConfig().getBoolean("dispenser.bucketsEnable", true) && plugin.getConfig().getBoolean("dispenser.bucketsKeep", true));
+            boolean leaveContainer = plugin.getConfig().getBoolean("dispenser.bucketsEnable", true) && plugin.getConfig().getBoolean("dispenser.bucketsKeep", true);
+            net.minecraft.server.ItemStack item = takeItem(tileEntity, slot, augmentStorage, leaveContainer);
 
-            dispenseItem(dispenser, world, item, x, y, z, functions);
+            dispenseItem(dispenser, world, item, x, y, z, functions, dispenseDirection);
         }
 
 
@@ -871,12 +873,10 @@ class BetterDispensersListener implements Listener {
 
     // Dispense an item ourselves
     // See net/minecraft/server/BlockDispenser.java dispense()
-    public void dispenseItem(Dispenser dispenser, net.minecraft.server.World world, net.minecraft.server.ItemStack item, int x, int y, int z, int functions) {
+    public void dispenseItem(Dispenser dispenser, net.minecraft.server.World world, net.minecraft.server.ItemStack item, int x, int y, int z, int functions, Vector direction) {
         // Get direction vector, including up/down
         double dx = 0, dz = 0, dy = 0;
         byte data = dispenser.getRawData();
-
-        Vector direction = getMetadataDirection(data);
 
         dx = direction.getX();
         dy = direction.getY();
