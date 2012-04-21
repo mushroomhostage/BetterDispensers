@@ -433,6 +433,7 @@ class BetterDispensersListener implements Listener {
             plugin.log("CRAFT: " + item);
 
             // Take one from all slots
+            // TODO: takeItem() so supports chests!
             for (int i = 0; i < contents.length; i += 1) {
                 net.minecraft.server.ItemStack craftItem = tileEntity.getItem(i);
 
@@ -575,13 +576,48 @@ class BetterDispensersListener implements Listener {
             // Regular dispensing.. but possibly vertical or with special items
             int slot = tileEntity.findDispenseSlot();
 
-            net.minecraft.server.ItemStack item = tileEntity.splitStack(slot, 1);
+            net.minecraft.server.ItemStack item = takeItem(tileEntity, slot, augmentStorage);
+
             dispenseItem(blockState, world, item, x, y, z, functions);
         }
     }
 
+    // Take an item from the dispenser, or from its augmented storage inventory
+    private net.minecraft.server.ItemStack takeItem(net.minecraft.server.TileEntityDispenser tileEntity, int slot, InventoryHolder augmentStorage) {
+       if (augmentStorage == null) {
+            // Take one from dispenser and return it
+            return tileEntity.splitStack(slot, 1);
+        }
+
+        // Get item type
+        net.minecraft.server.ItemStack itemMatch = tileEntity.getItem(slot);
+
+        // Find matching item in chest
+        Inventory inventory = augmentStorage.getInventory();
+        ItemStack[] contents = inventory.getContents();
+        for (int i = 0; i < contents.length; i += 1) {
+            if (contents[i] != null && contents[i].getTypeId() == itemMatch.id && (itemMatch.getData() == -1 || itemMatch.getData() == contents[i].getDurability())) {
+                plugin.log("match augment inventory"+contents[i]);
+
+                // Split the stack ourselves
+                // TODO: Bukkit way of doing this?
+                int quantity = contents[i].getAmount();
+                if (quantity > 1) {
+                    contents[i].setAmount(quantity - 1);
+                    inventory.setItem(i, contents[i]);
+                } else {
+                    inventory.setItem(i, null);
+                }
+
+                return new net.minecraft.server.ItemStack(itemMatch.id, 1, itemMatch.getData());
+            }
+        }
+
+        return null;
+    }
+
     // Play the "failed to dispense" effect, an empty click
-    public void failDispense(net.minecraft.server.World world, int x, int y, int z) {
+    private void failDispense(net.minecraft.server.World world, int x, int y, int z) {
         world.triggerEffect(1001, x, y, z, 0);
     }
 
