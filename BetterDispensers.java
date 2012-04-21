@@ -434,24 +434,12 @@ class BetterDispensersListener implements Listener {
 
             // Take one from all slots, consuming ingredients
             for (int i = 0; i < contents.length; i += 1) {
-                net.minecraft.server.ItemStack craftItem = takeItem(tileEntity, i, augmentStorage);
+                net.minecraft.server.ItemStack craftItem = takeItemContainer(tileEntity, i, augmentStorage, true);
 
                 if (craftItem == null) {
                     continue;
                 }
 
-                // Cake recipe, milk bucket crafts to empty bucket
-                if (net.minecraft.server.Item.byId[craftItem.id].k()) {    // MCP hasContainerItem() - gets containerItem, Bukkit craftingREsult
-                    // MCP getContainerItem()
-                    net.minecraft.server.ItemStack containerItem = new net.minecraft.server.ItemStack(net.minecraft.server.Item.byId[craftItem.id].j());
-
-                    if (augmentStorage == null) {
-                        tileEntity.setItem(i, containerItem);
-                    } else {
-                        // drawing from chest
-                        plugin.log("TODO: set container item in storage");
-                    }
-                }
             }
 
             dispenseItem(blockState, world, item, x, y, z, functions);
@@ -587,40 +575,62 @@ class BetterDispensersListener implements Listener {
 
     // Take an item from the dispenser, or from its augmented storage inventory
     private net.minecraft.server.ItemStack takeItem(net.minecraft.server.TileEntityDispenser tileEntity, int slot, InventoryHolder augmentStorage) {
-       if (augmentStorage == null) {
+        return takeItemContainer(tileEntity, slot, augmentStorage, false);
+    }
+
+    // ... optionally replacing item with its container, if it has one (milk bucket -> bucket), for crafting
+    private net.minecraft.server.ItemStack takeItemContainer(net.minecraft.server.TileEntityDispenser tileEntity, int slot, InventoryHolder augmentStorage, boolean replaceContainer) {
+
+        if (augmentStorage == null) {
             // Take one from dispenser and return it
-            return tileEntity.splitStack(slot, 1);
-        }
+            net.minecraft.server.ItemStack item = tileEntity.splitStack(slot, 1);
 
-        // Get item type
-        net.minecraft.server.ItemStack itemMatch = tileEntity.getItem(slot);
+            tileEntity.setItem(slot, replaceContainer ? getContainerItem(item) : null);
 
-        if (itemMatch == null) {
-            return null;
-        }
+            return item;
+        } else {
+            // Take from augment storage
 
-        // Find matching item in chest
-        Inventory inventory = augmentStorage.getInventory();
-        ItemStack[] contents = inventory.getContents();
-        for (int i = 0; i < contents.length; i += 1) {
-            if (contents[i] != null && contents[i].getTypeId() == itemMatch.id && (itemMatch.getData() == -1 || itemMatch.getData() == contents[i].getDurability())) {
-                plugin.log("match augment inventory"+contents[i]);
+            // Get item type
+            net.minecraft.server.ItemStack itemMatch = tileEntity.getItem(slot);
 
-                // Split the stack ourselves
-                // TODO: Bukkit way of doing this?
-                int quantity = contents[i].getAmount();
-                if (quantity > 1) {
-                    contents[i].setAmount(quantity - 1);
-                    inventory.setItem(i, contents[i]);
-                } else {
-                    inventory.setItem(i, null);
+            if (itemMatch == null) {
+                return null;
+            }
+
+            // Find matching item in storage
+            Inventory inventory = augmentStorage.getInventory();
+            ItemStack[] contents = inventory.getContents();
+            for (int i = 0; i < contents.length; i += 1) {
+                if (contents[i] != null && contents[i].getTypeId() == itemMatch.id && (itemMatch.getData() == -1 || itemMatch.getData() == contents[i].getDurability())) {
+                    plugin.log("match augment inventory"+contents[i]);
+
+                    // Split the stack ourselves
+                    // TODO: Bukkit way of doing this?
+                    int quantity = contents[i].getAmount();
+                    if (quantity > 1) {
+                        contents[i].setAmount(quantity - 1);
+                        inventory.setItem(i, contents[i]);
+                    } else {
+                        inventory.setItem(i, replaceContainer ? new CraftItemStack(getContainerItem(((CraftItemStack)contents[i]).getHandle())) : null);
+                    }
+
+                    return new net.minecraft.server.ItemStack(itemMatch.id, 1, itemMatch.getData());
                 }
-
-                return new net.minecraft.server.ItemStack(itemMatch.id, 1, itemMatch.getData());
             }
         }
 
         return null;
+    }
+
+    // Get the 'container' for an item (milk bucket -> empty bucket), if any
+    public static net.minecraft.server.ItemStack getContainerItem(net.minecraft.server.ItemStack craftItem) {
+        if (net.minecraft.server.Item.byId[craftItem.id].k()) {    // MCP hasContainerItem() - gets containerItem, Bukkit craftingREsult
+            // MCP getContainerItem()
+            return new net.minecraft.server.ItemStack(net.minecraft.server.Item.byId[craftItem.id].j());
+        } else {
+            return null;
+        }
     }
 
     // Play the "failed to dispense" effect, an empty click
