@@ -432,22 +432,25 @@ class BetterDispensersListener implements Listener {
 
             plugin.log("CRAFT: " + item);
 
-            // Take one from all slots
-            // TODO: takeItem() so supports chests!
+            // Take one from all slots, consuming ingredients
             for (int i = 0; i < contents.length; i += 1) {
-                net.minecraft.server.ItemStack craftItem = tileEntity.getItem(i);
-
-                tileEntity.splitStack(i, 1);
+                net.minecraft.server.ItemStack craftItem = takeItem(tileEntity, i, augmentStorage);
 
                 if (craftItem == null) {
-                    return;
+                    continue;
                 }
 
                 // Cake recipe, milk bucket crafts to empty bucket
                 if (net.minecraft.server.Item.byId[craftItem.id].k()) {    // MCP hasContainerItem() - gets containerItem, Bukkit craftingREsult
                     // MCP getContainerItem()
                     net.minecraft.server.ItemStack containerItem = new net.minecraft.server.ItemStack(net.minecraft.server.Item.byId[craftItem.id].j());
-                    tileEntity.setItem(i, containerItem);
+
+                    if (augmentStorage == null) {
+                        tileEntity.setItem(i, containerItem);
+                    } else {
+                        // drawing from chest
+                        plugin.log("TODO: set container item in storage");
+                    }
                 }
             }
 
@@ -591,6 +594,10 @@ class BetterDispensersListener implements Listener {
 
         // Get item type
         net.minecraft.server.ItemStack itemMatch = tileEntity.getItem(slot);
+
+        if (itemMatch == null) {
+            return null;
+        }
 
         // Find matching item in chest
         Inventory inventory = augmentStorage.getInventory();
