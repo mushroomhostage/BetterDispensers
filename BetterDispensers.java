@@ -499,7 +499,24 @@ class BetterDispensersListener implements Listener {
             ax += direction.getBlockX();
             ay += direction.getBlockY();
             az += direction.getBlockZ();
-            // TODO: reach, if air?
+
+            // Reach linearly (note this is different from the staggered surface reach of the interactor)
+            int reach = plugin.getConfig().getInt("breaker.reachLimit", 7);
+            while (bukkitWorld.getBlockTypeIdAt(ax, ay, az) == 0 && reach > 0) {    
+                ax += direction.getBlockX();
+                ay += direction.getBlockY();
+                az += direction.getBlockZ();
+                reach -= 1;
+            }
+
+            // Swing.. and miss
+            if (bukkitWorld.getBlockTypeIdAt(ax, ay, az) == 0) {
+                failDispense(world, x, y, z);
+                return;
+            }
+
+
+
 
             Block b = dispenser.getWorld().getBlockAt(ax,ay,az);
             plugin.log("break block "+b);
