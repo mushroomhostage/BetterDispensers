@@ -1011,6 +1011,18 @@ public class BetterDispensers extends JavaPlugin {
             return -1;
         }
 
+        if (getConfig().getBoolean("dispenser.sneakReverseOrientation", true) && player.isSneaking()) {
+            switch (l)
+            {
+            case 0: return 1; // down -> up
+            case 1: return 0; // up -> down
+            case 2: return 3; // north -> south
+            case 3: return 2; // south -> north
+            case 4: return 5; // west -> east
+            case 5: return 4; // east -> west;
+            }
+        }
+
         return l;
     }
 
