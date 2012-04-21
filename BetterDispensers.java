@@ -946,10 +946,21 @@ class BetterDispensersListener implements Listener {
         } else if (plugin.getConfig().getIntegerList("dispenser.liquids").contains(item.id) && plugin.getConfig().getBoolean("liquidsEnable", true)) {
             // Dispense liquids
             // See also: LiquidDispenser http://forums.bukkit.org/threads/mech-misc-liquiddispenser-1-2-allows-dispensers-to-dispense-water-and-lava-1-2-3.43790/
-            if (adjacentBlock.getTypeId() == 0 || plugin.getConfig().getBoolean("liquidsReplace", false)) { 
-                // TODO: lava onto water?
+            // Liquids can replace air or other liquids
+            if (adjacentBlock.getTypeId() == 0 || plugin.getConfig().getIntegerList("dispenser.liquids").contains(adjacentBlock.getTypeId())) {
+                // Interestingly, replacing water with lava actually does create obsidian,
+                // probably from the nearby flowing blocks. Can this be used with a breaker 
+                // to make an obsidian generator?
                 adjacentBlock.setTypeId(item.id, true);
+            }  // TODO: otherwise, fail?
+        } else if (plugin.getConfig().getIntegerList("dispenser.buckets").contains(item.id) && plugin.getConfig().getBoolean("bucketsEnable", true)) {
+            // Dispense buckets into liquids
+            if (adjacentBlock.getTypeId() == 0 || plugin.getConfig().getIntegerList("dispenser.liquids").contains(adjacentBlock.getTypeId())) {
+                int liquid = plugin.getConfig().getInt("dispenser.bucketLiquids." + item.id);
+
+                adjacentBlock.setTypeId(liquid, true);
             }
+            // TODO: keep the bucket
         } else if (plugin.getConfig().getBoolean("dispenser.itemEnable", true)) {
             // non-projectile item
             net.minecraft.server.EntityItem entityItem = new net.minecraft.server.EntityItem(world, x0, y0 - 0.3d, z0, item);
