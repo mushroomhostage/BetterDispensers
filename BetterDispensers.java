@@ -948,6 +948,17 @@ class BetterDispensersListener implements Listener {
             tnt.motZ = motZ;
 
             entity = (net.minecraft.server.Entity)tnt;
+        } else if (plugin.getConfig().getIntegerList("dispenser.blockPlace").contains(item.id)) {
+            // 
+            // See also: LiquidDispenser http://forums.bukkit.org/threads/mech-misc-liquiddispenser-1-2-allows-dispensers-to-dispense-water-and-lava-1-2-3.43790/
+            Block b = dispenser.getLocation().getWorld().getBlockAt(new Location(dispenser.getLocation().getWorld(),x0,y0,z0));
+
+            if (b.getTypeId() == 0 || plugin.getConfig().getBoolean("blockPlaceReplace", true)) { 
+                // TODO: lava onto water?
+                setTypeId(item.id, true);
+            }
+
+            // TODO 
         } else if (plugin.getConfig().getBoolean("dispenser.itemEnable", true)) {
             // non-projectile item
             net.minecraft.server.EntityItem entityItem = new net.minecraft.server.EntityItem(world, x0, y0 - 0.3d, z0, item);
