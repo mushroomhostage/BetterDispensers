@@ -465,7 +465,7 @@ class BetterDispensersListener implements Listener {
 
             // Take one from all slots, consuming ingredients
             for (int i = 0; i < contents.length; i += 1) {
-                net.minecraft.server.ItemStack craftItem = takeItemContainer(tileEntity, i, augmentStorage, true);
+                net.minecraft.server.ItemStack craftItem = takeItem(tileEntity, i, augmentStorage, true);
 
                 if (craftItem == null) {
                     continue;
@@ -614,7 +614,7 @@ class BetterDispensersListener implements Listener {
             // Item dispensing
             int slot = tileEntity.findDispenseSlot();
 
-            net.minecraft.server.ItemStack item = takeItem(tileEntity, slot, augmentStorage);
+            net.minecraft.server.ItemStack item = takeItem(tileEntity, slot, augmentStorage, plugin.getConfig().getBoolean("dispenser.bucketsEnable", true) && plugin.getConfig().getBoolean("dispenser.bucketsKeep", true));
 
             dispenseItem(dispenser, world, item, x, y, z, functions);
         }
@@ -661,12 +661,8 @@ class BetterDispensersListener implements Listener {
 
 
     // Take an item from the dispenser, or from its augmented storage inventory
-    private net.minecraft.server.ItemStack takeItem(net.minecraft.server.TileEntityDispenser tileEntity, int slot, InventoryHolder augmentStorage) {
-        return takeItemContainer(tileEntity, slot, augmentStorage, false);
-    }
-
     // ... optionally replacing item with its container, if it has one (milk bucket -> bucket), for crafting
-    private net.minecraft.server.ItemStack takeItemContainer(net.minecraft.server.TileEntityDispenser tileEntity, int slot, InventoryHolder augmentStorage, boolean replaceContainer) {
+    private net.minecraft.server.ItemStack takeItem(net.minecraft.server.TileEntityDispenser tileEntity, int slot, InventoryHolder augmentStorage, boolean replaceContainer) {
 
         if (augmentStorage == null) {
             // Take one from dispenser and return it
@@ -960,7 +956,7 @@ class BetterDispensersListener implements Listener {
 
                 adjacentBlock.setTypeId(liquid, true);
             }
-            // TODO: keep the bucket
+            // Note, will keep the bucket (or any other container) if bucketsKeep was set elsehwere
         } else if (plugin.getConfig().getBoolean("dispenser.itemEnable", true)) {
             // non-projectile item
             net.minecraft.server.EntityItem entityItem = new net.minecraft.server.EntityItem(world, x0, y0 - 0.3d, z0, item);
