@@ -387,8 +387,20 @@ class BetterDispensersListener implements Listener {
             }
         }
 
+        InventoryHolder augmentStorage = null;
+
         if ((functions & FUNCTION_STORAGE) != 0) {
-            plugin.log.info("STORAGE");
+            // Pull inventory from extra storage container first
+            for (BlockFace direction: surfaceDirections) {
+                Block near = block.getRelative(direction);
+                BlockState nearState = near.getState();
+
+                if (nearState instanceof InventoryHolder) {
+                    augmentStorage = (InventoryHolder)nearState;
+                    plugin.log("found augment storage "+augmentStorage);
+                    break;
+                }
+            }
         }
 
         if ((functions & FUNCTION_CRAFTER) != 0) {
@@ -422,7 +434,20 @@ class BetterDispensersListener implements Listener {
 
             // Take one from all slots
             for (int i = 0; i < contents.length; i += 1) {
+                net.minecraft.server.ItemStack craftItem = tileEntity.getItem(i);
+
                 tileEntity.splitStack(i, 1);
+
+                if (craftItem == null) {
+                    return;
+                }
+
+                // Cake recipe, milk bucket crafts to empty bucket
+                if (net.minecraft.server.Item.byId[craftItem.id].k()) {    // MCP hasContainerItem() - gets containerItem, Bukkit craftingREsult
+                    // MCP getContainerItem()
+                    net.minecraft.server.ItemStack containerItem = new net.minecraft.server.ItemStack(net.minecraft.server.Item.byId[craftItem.id].j());
+                    tileEntity.setItem(i, containerItem);
+                }
             }
 
             dispenseItem(blockState, world, item, x, y, z, functions);
