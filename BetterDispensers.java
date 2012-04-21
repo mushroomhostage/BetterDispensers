@@ -585,7 +585,10 @@ class BetterDispensersListener implements Listener {
             // Take one from dispenser and return it
             net.minecraft.server.ItemStack item = tileEntity.splitStack(slot, 1);
 
-            tileEntity.setItem(slot, replaceContainer ? getContainerItem(item) : null);
+            if (replaceContainer && getContainerItem(item) != null) {
+                tileEntity.setItem(slot, getContainerItem(item));
+                // if wanted to replace containers, but it isn't one, we defer to the split stack above
+            }
 
             return item;
         } else {
