@@ -491,8 +491,6 @@ class BetterDispensersListener implements Listener {
                 return;
             }
 
-            damageToolInDispenser(tool, slot, tileEntity);
-
             // Get block direction
             int ax = x, ay = y, az = z;
             Vector direction = getMetadataDirection(blockState.getRawData());
@@ -501,8 +499,17 @@ class BetterDispensersListener implements Listener {
             az += direction.getBlockZ();
             // TODO: reach, if air?
 
-            Block b = Bukkit.getWorlds().get(0).getBlockAt(ax,ay,az);   // TODO: multi-world support!
+            Block b = dispenser.getWorld().getBlockAt(ax,ay,az);
             plugin.log("break block "+b);
+
+            if (plugin.getConfig().getIntegerList("breaker.unbreakableBlockIDs").contains(b.getTypeId())) {
+                // Bedrock, etc.
+                plugin.log("trying to break unbreakable "+b);
+                failDispense(world, x, y, z);
+                return;
+            }
+
+            damageToolInDispenser(tool, slot, tileEntity);
 
             // Create a new fake player to log breaking the block
             net.minecraft.server.MinecraftServer console = ((CraftServer)Bukkit.getServer()).getServer();
@@ -526,14 +533,12 @@ class BetterDispensersListener implements Listener {
             fakeBreakerPlayer.die();
 
             if (!breakEvent.isCancelled()) {
-                // TODO: don't break bedrock..
-
                 // Dispense all the broken items throughout the dispenser
                 //b.breakNaturally(new CraftItemStack(tool));
                 Collection<ItemStack> drops = b.getDrops(new CraftItemStack(tool));
-                b.setTypeId(0);
+                b.setTypeId(0, true);
                 for (ItemStack drop: drops) {
-                    net.minecraft.server.ItemStack item = ((CraftItemStack)drop).getHandle();
+                    net.minecraft.server.ItemStack item = (new CraftItemStack(drop)).getHandle();
 
                     dispenseItem(blockState, world, item, x, y, z, functions);
                 }
