@@ -375,8 +375,6 @@ class BetterDispensersListener implements Listener {
         Dispenser dispenser = (Dispenser)blockState;
 
         // Override ALL dispensing everywhere and do it ourselves
-        // TODO: option to not override horizontal item dispensing?? 
-        // We're breaking Balkon's Weapon Mod cannonballs in dispensers..
         event.setCancelled(true);
 
         int functions = getDispenserFunctions(block);
@@ -630,8 +628,22 @@ class BetterDispensersListener implements Listener {
                 // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
             }
         } else {
-
             // Item dispensing
+
+            if ((dispenseDirection.getX() != 0 || dispenseDirection.getZ() != 0) && !plugin.getConfig().getBoolean("dispenser.overrideHorizontal", true)) {
+                // Let vanilla handle it for us. This is for compatibility with mods that override dispensing..
+                // Balkon's Weapon Mod cannonballs did, at one point(?)
+                plugin.log("not overriding horizontal dispensing");
+                event.setCancelled(false);
+                return;
+            }
+            if (dispenseDirection.getY() != 0 && !plugin.getConfig().getBoolean("dispenser.overrideVertical", true)) {
+                // For some reason, may wish to not have us handle vertical dispensing too
+                plugin.log("not overriding vertical dispensing");
+                event.setCancelled(false);
+                return;
+            }
+
             int slot = tileEntity.findDispenseSlot();
 
             boolean leaveContainer = plugin.getConfig().getBoolean("dispenser.bucketsEnable", true) && plugin.getConfig().getBoolean("dispenser.bucketsKeep", true);
