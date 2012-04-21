@@ -869,7 +869,7 @@ class BetterDispensersListener implements Listener {
         double y0 = y + 0.5 + dy;           // d1
         double z0 = z + dz*0.6 + 0.5;       // d2
 
-        if (item.id == net.minecraft.server.Item.ARROW.id) {
+        if (item.id == net.minecraft.server.Item.ARROW.id && plugin.getConfig().getBoolean("dispenser.arrowEnable", true)) {
             net.minecraft.server.EntityArrow arrow = new net.minecraft.server.EntityArrow(world, x0, y0, z0);
             //  shoot() is actually "setArrowHeading(x, y, z, force, forceVariation)"
 
@@ -878,13 +878,13 @@ class BetterDispensersListener implements Listener {
                 (float)plugin.getConfig().getDouble("dispenser.arrowSpread", 6.0));
             arrow.fromPlayer = true;
             entity = (net.minecraft.server.Entity)arrow;
-        } else if (item.id == net.minecraft.server.Item.EGG.id) {
+        } else if (item.id == net.minecraft.server.Item.EGG.id && plugin.getConfig().getBoolean("dispenser.eggEnable", true)) {
             net.minecraft.server.EntityEgg egg = new net.minecraft.server.EntityEgg(world, x0, y0, z0);
             egg.a(dx, v, dz, 
                 (float)plugin.getConfig().getDouble("dispenser.eggForce", 1.1),
                 (float)plugin.getConfig().getDouble("dispenser.eggSpread", 6.0));
             entity = (net.minecraft.server.Entity)egg;
-        } else if (item.id == net.minecraft.server.Item.SNOW_BALL.id) {
+        } else if (item.id == net.minecraft.server.Item.SNOW_BALL.id && plugin.getConfig().getBoolean("dispenser.snowballEnable", true)) {
             net.minecraft.server.EntitySnowball ball = new net.minecraft.server.EntitySnowball(world, x0, y0, z0);
             ball.a(dx, v, dz, 
                 (float)plugin.getConfig().getDouble("dispenser.snowballForce", 1.1),
@@ -898,24 +898,24 @@ class BetterDispensersListener implements Listener {
             tnt.a(0, v, 0, 1.1f, 6.0f);
             entity = (net.minecraft.server.Entity)tnt;
         */
-        } else if (item.id == net.minecraft.server.Item.POTION.id && net.minecraft.server.ItemPotion.c(item.getData())) {
+        } else if (item.id == net.minecraft.server.Item.POTION.id && net.minecraft.server.ItemPotion.c(item.getData()) && plugin.getConfig().getBoolean("dispenser.potionEnable", true)) {
             // splash potion
             net.minecraft.server.EntityPotion potion = new net.minecraft.server.EntityPotion(world, x0, y0, z0, item.getData());
             potion.a(dx, v, dz, 
                 (float)plugin.getConfig().getDouble("dispenser.potionForce", 1.375), // why 1.375 not 1.1? because Minecraft
                 (float)plugin.getConfig().getDouble("dispenser.potionSpread", 6.0f));
             entity = (net.minecraft.server.Entity)potion;
-        } else if (item.id == net.minecraft.server.Item.EXP_BOTTLE.id) {
+        } else if (item.id == net.minecraft.server.Item.EXP_BOTTLE.id && plugin.getConfig().getBoolean("dispenser.expbottleEnable", true)) {
             net.minecraft.server.EntityThrownExpBottle bottle = new net.minecraft.server.EntityThrownExpBottle(world, x0, y0, z0);
             bottle.a(dx, v, dz, 
                 (float)plugin.getConfig().getDouble("dispenser.expbottleForce", 1.1),
                 (float)plugin.getConfig().getDouble("dispenser.expbottleSpread", 6.0));
             entity = (net.minecraft.server.Entity)bottle;
-        } else if (item.id == net.minecraft.server.Item.MONSTER_EGG.id) {
+        } else if (item.id == net.minecraft.server.Item.MONSTER_EGG.id && plugin.getConfig().getBoolean("dispenser.spawnEggEnable", true)) {
             net.minecraft.server.ItemMonsterEgg.a(world, item.getData(), x0 + dx*0.3, y0 - 0.3, z0 + dz*0.3);
             // not thrown
             entity = null;
-        } else if (item.id == net.minecraft.server.Item.FIREBALL.id) {
+        } else if (item.id == net.minecraft.server.Item.FIREBALL.id && plugin.getConfig().getBoolean("dispenser.fireballEnable", true)) {
             net.minecraft.server.EntitySmallFireball fire = new net.minecraft.server.EntitySmallFireball(world, 
                 x0 + dx*0.3,
                 y0,
@@ -924,40 +924,38 @@ class BetterDispensersListener implements Listener {
                      random.nextGaussian() * plugin.getConfig().getDouble("dispenser.fireballRandomMotionY", 0.05),
                 dz + random.nextGaussian() * plugin.getConfig().getDouble("dispenser.fireballRandomMotionZ", 0.05));
             entity = (net.minecraft.server.Entity)fire;
-        } else if (item.id == net.minecraft.server.Block.TNT.id) {
+        } else if (item.id == net.minecraft.server.Block.TNT.id && plugin.getConfig().getBoolean("dispenser.tntEnable", true)) {
             net.minecraft.server.EntityTNTPrimed tnt = new net.minecraft.server.EntityTNTPrimed(world, x0, y0, z0);
+
+            tnt.fuseTicks = plugin.getConfig().getInt("dispenser.tntFuseTicks", 15);
+
             // Primed TNT is not a projectile so it doesn't have the same a(dx,v,dz,force,spread) method
-
-            /*
-            tnt.a(dx, v, dz, 
-                (float)plugin.getConfig().getDouble("dispenser.tntForce", 1.1),
-                (float)plugin.getConfig().getDouble("dispenser.tntSpread", 6.0));
-                */
-
             // Set the motion ourselves, like an item entity
-            double fuzz = random.nextDouble() * 0.1 + 0.2;  // d3
-            double motX = dx * fuzz;
-            double motY = v * plugin.getConfig().getDouble("dispenser.velocityItemFactor", 2.0);
-            double motZ = dz * fuzz;
+            double fuzz = random.nextDouble() * plugin.getConfig().getDouble("dispenser.tntFuzz", 0.3);
+            double motX = dx * (fuzz + plugin.getConfig().getDouble("dispenser.tntVelocityBaseX", 1.0));
+            double motY = v * plugin.getConfig().getDouble("dispenser.tntVelocityFactorY", 3.0) + plugin.getConfig().getDouble("dispenser.tntVelocityBaseY", 1.0);
+            double motZ = dz * (fuzz + plugin.getConfig().getDouble("dispenser.tntVelocityBaseZ", 1.0));
 
-            motX += random.nextGaussian() * plugin.getConfig().getDouble("dispenser.itemRandomMotionX", 0.0075 * 6.0);
-            motY += random.nextGaussian() * plugin.getConfig().getDouble("dispenser.itemRandomMotionY", 0.0075 * 6.0);
-            motZ += random.nextGaussian() * plugin.getConfig().getDouble("dispenser.itemRandomMotionZ", 0.0075 * 6.0);
+            motX += random.nextGaussian() * plugin.getConfig().getDouble("dispenser.tntRandomMotionX", 0.0075 * 6.0);
+            motY += random.nextGaussian() * plugin.getConfig().getDouble("dispenser.tntRandomMotionY", 0.0075 * 6.0);
+            motZ += random.nextGaussian() * plugin.getConfig().getDouble("dispenser.tntRandomMotionZ", 0.0075 * 6.0);
+
+            motX *= plugin.getConfig().getDouble("dispenser.tntVelocityFactorHorizontal", 5.0);
+            motZ *= plugin.getConfig().getDouble("dispenser.tntVelocityFactorHorizontal", 5.0);
 
             tnt.motX = motX;
             tnt.motY = motY;
             tnt.motZ = motZ;
 
-
             entity = (net.minecraft.server.Entity)tnt;
-        } else {
+        } else if (plugin.getConfig().getBoolean("dispenser.itemEnable", true)) {
             // non-projectile item
             net.minecraft.server.EntityItem entityItem = new net.minecraft.server.EntityItem(world, x0, y0 - 0.3d, z0, item);
 
             // CraftBukkit moves this code up for events.. but its only applicable here (see MCP)
-            double fuzz = random.nextDouble() * 0.1 + 0.2;  // d3
+            double fuzz = random.nextDouble() * plugin.getConfig().getDouble("dispenser.itemFuzz", 0.3);  // d3
             double motX = dx * fuzz;
-            double motY = v * plugin.getConfig().getDouble("dispenser.velocityItemFactor", 2.0);
+            double motY = v * plugin.getConfig().getDouble("dispenser.itemVelocityFactorY", 2.0);
             double motZ = dz * fuzz;
             motX += random.nextGaussian() * plugin.getConfig().getDouble("dispenser.itemRandomMotionX", 0.0075 * 6.0);
             motY += random.nextGaussian() * plugin.getConfig().getDouble("dispenser.itemRandomMotionY", 0.0075 * 6.0);
