@@ -625,7 +625,7 @@ class BetterDispensersListener implements Listener {
 
     // Get the 'container' for an item (milk bucket -> empty bucket), if any
     public static net.minecraft.server.ItemStack getContainerItem(net.minecraft.server.ItemStack craftItem) {
-        if (net.minecraft.server.Item.byId[craftItem.id].k()) {    // MCP hasContainerItem() - gets containerItem, Bukkit craftingREsult
+        if (craftItem != null && net.minecraft.server.Item.byId[craftItem.id].k()) {    // MCP hasContainerItem() - gets containerItem, Bukkit craftingREsult
             // MCP getContainerItem()
             return new net.minecraft.server.ItemStack(net.minecraft.server.Item.byId[craftItem.id].j());
         } else {
