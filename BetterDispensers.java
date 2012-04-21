@@ -526,7 +526,7 @@ class BetterDispensersListener implements Listener {
             // .. crucially, the player must be holding the item which broke the block
             // This is required for compatibility with EnchantMore etc.
             // (.. but sadly, plugins which change drops don't override getDrops(), so the item
-            // will always be dropped in the world, not routed to any pipes)
+            // will always be dropped in the world, not routed to any conduits)
             fakeBreakerPlayerBukkit.setItemInHand(new CraftItemStack(tool));
 
             BlockBreakEvent breakEvent = new BlockBreakEvent(b, fakeBreakerPlayerBukkit);
@@ -755,8 +755,51 @@ class BetterDispensersListener implements Listener {
         return new Vector(dx, dy, dz);
     }
 
+    // Get the destination inventory of a glass conduit
+    public Block followConduit(Block origin) {
+        Block block = origin;
+
+        int limit = plugin.getConfig().getInt("conduit.maxLength", 100);
+
+        do {
+            Block nextBlock = null;
+
+            // Find next block in conduit-line.. or endpoint
+            for (BlockFace direction: surfaceDirections) {
+                Block near = block.getRelative(direction);
+
+                if (!near.equals(block) && near.getTypeId() == plugin.getConfig().getInt("conduit.blockID", 20 /* glass */)) {
+                    plugin.log("conduit next "+direction+" from "+block+" to "+near);
+                    nextBlock = near;
+                    break;
+                }
+
+                BlockState state = near.getState();
+                if (state instanceof InventoryHolder) {
+                    // This is our stop!
+                    //return (InventoryHolder)state;
+                    plugin.log("conduit found "+(InventoryHolder)state);
+                    return near;    // return the block, so can also convey the location :(
+                }
+            }
+
+            block = nextBlock;
+
+            // end of the line
+            if (nextBlock == null) {
+                break;
+            }
+
+            plugin.log("conduit length "+limit);
+
+            limit -= 1;
+        } while (limit > 0); 
+
+        return null;
+    }
+
     private void filler(Dispenser dispenser, net.minecraft.server.ItemStack item) {
-        // Locate the connecting 'pipe'
+        // Locate the connecting wooden 'conduit'
         Block connector = null;
         Location connectorLocation = null;
         for (BlockFace direction: surfaceDirections) {
@@ -775,25 +818,30 @@ class BetterDispensersListener implements Listener {
             return;
         }
 
+        Block containerBlock = followConduit(connector);
+        InventoryHolder container = (InventoryHolder)containerBlock.getState();
+        Location containerLocation = containerBlock.getLocation();
+
+        /*
         InventoryHolder container = null;
         Location containerLocation = null;
 
-        // Find destination of pipe, any inventory holder block
-        // TODO: traverse connecting pipe, out of glass maybe? like http://dev.bukkit.org/server-mods/machinacraft/
+        // Find destination of conduit, any inventory holder block
+        // TODO: traverse connecting conduit, out of glass maybe? like http://dev.bukkit.org/server-mods/machinacraft/
         for (BlockFace direction: surfaceDirections) {
             Block near = connector.getRelative(direction);
-            if (near == dispenser.getBlock()) {
+            if (near.equals(dispenser.getBlock())) {
                 continue;
             }
 
             BlockState blockState = near.getState();
             if (blockState instanceof InventoryHolder) {
-                plugin.log("Found filler destination! " + near);
+                plugin.log("Found filler destination! immediate: " + near);
                 container = (InventoryHolder)blockState;
                 containerLocation = near.getLocation();
                 break;
             }
-        }
+        }*/
 
         if (container == null) {
             plugin.log("No destination");
