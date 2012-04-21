@@ -869,6 +869,9 @@ class BetterDispensersListener implements Listener {
         double y0 = y + 0.5 + dy;           // d1
         double z0 = z + dz*0.6 + 0.5;       // d2
 
+        // Get block directly adjacent to dispensing hole, used for some items
+        Block adjacentBlock = dispenser.getLocation().getWorld().getBlockAt(new Location(dispenser.getLocation().getWorld(),x0,y0,z0));
+
         if (item.id == net.minecraft.server.Item.ARROW.id && plugin.getConfig().getBoolean("dispenser.arrowEnable", true)) {
             net.minecraft.server.EntityArrow arrow = new net.minecraft.server.EntityArrow(world, x0, y0, z0);
             //  shoot() is actually "setArrowHeading(x, y, z, force, forceVariation)"
@@ -890,14 +893,6 @@ class BetterDispensersListener implements Listener {
                 (float)plugin.getConfig().getDouble("dispenser.snowballForce", 1.1),
                 (float)plugin.getConfig().getDouble("dispenser.snowballSpread", 6.0));
             entity = (net.minecraft.server.Entity)ball;
-
-        /* TODO: add TNT cannons (optional)
-        not as simple as others, because TNTPrimed isn't a Projectile.. so can't use a()
-        } else if (item.id == net.minecraft.server.Block.TNT.id && plugin.getConfig().getBoolean("primeTNT", false)) {
-            net.minecraft.server.EntityTNTPrimed tnt = new net.minecraft.server.EntityTNTPrimed(world, x0, y0, z0);
-            tnt.a(0, v, 0, 1.1f, 6.0f);
-            entity = (net.minecraft.server.Entity)tnt;
-        */
         } else if (item.id == net.minecraft.server.Item.POTION.id && net.minecraft.server.ItemPotion.c(item.getData()) && plugin.getConfig().getBoolean("dispenser.potionEnable", true)) {
             // splash potion
             net.minecraft.server.EntityPotion potion = new net.minecraft.server.EntityPotion(world, x0, y0, z0, item.getData());
@@ -948,17 +943,13 @@ class BetterDispensersListener implements Listener {
             tnt.motZ = motZ;
 
             entity = (net.minecraft.server.Entity)tnt;
-        } else if (plugin.getConfig().getIntegerList("dispenser.blockPlace").contains(item.id)) {
-            // 
+        } else if (plugin.getConfig().getIntegerList("dispenser.liquids").contains(item.id) && plugin.getConfig().getBoolean("liquidsEnable", true)) {
+            // Dispense liquids
             // See also: LiquidDispenser http://forums.bukkit.org/threads/mech-misc-liquiddispenser-1-2-allows-dispensers-to-dispense-water-and-lava-1-2-3.43790/
-            Block b = dispenser.getLocation().getWorld().getBlockAt(new Location(dispenser.getLocation().getWorld(),x0,y0,z0));
-
-            if (b.getTypeId() == 0 || plugin.getConfig().getBoolean("blockPlaceReplace", true)) { 
+            if (adjacentBlock.getTypeId() == 0 || plugin.getConfig().getBoolean("liquidsReplace", false)) { 
                 // TODO: lava onto water?
-                setTypeId(item.id, true);
+                adjacentBlock.setTypeId(item.id, true);
             }
-
-            // TODO 
         } else if (plugin.getConfig().getBoolean("dispenser.itemEnable", true)) {
             // non-projectile item
             net.minecraft.server.EntityItem entityItem = new net.minecraft.server.EntityItem(world, x0, y0 - 0.3d, z0, item);
