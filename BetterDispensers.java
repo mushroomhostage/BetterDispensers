@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package me.exphc.BetterDispensers;
 
 import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -220,6 +221,7 @@ class BetterDispensersListener implements Listener {
     public static final int FUNCTION_STORAGE    = 1 << 4;
     public static final int FUNCTION_ACCELERATOR= 1 << 5;
     public static final int FUNCTION_TURRET     = 1 << 6;
+    public static final int FUNCTION_FILLER     = 1 << 7;
 
 
     // Get bit mask of the configured 'functions' of the dispenser based on its surroundings
@@ -242,6 +244,8 @@ class BetterDispensersListener implements Listener {
                 functions |= FUNCTION_ACCELERATOR;
             } else if (id == plugin.getConfig().getInt("turret.blockID", 45 /* bricks */)) {
                 functions |= FUNCTION_TURRET;
+            } else if (id == plugin.getConfig().getInt("filler.blockID", 5 /* filler */)) {
+                functions |= FUNCTION_FILLER;
             }
 
             BlockState bs = near.getState();
@@ -522,8 +526,17 @@ class BetterDispensersListener implements Listener {
             fakeBreakerPlayer.die();
 
             if (!breakEvent.isCancelled()) {
-                // TODO: and don't break bedrock..
-                b.breakNaturally(new CraftItemStack(tool));
+                // TODO: don't break bedrock..
+
+                // Dispense all the broken items throughout the dispenser
+                //b.breakNaturally(new CraftItemStack(tool));
+                Collection<ItemStack> drops = b.getDrops(new CraftItemStack(tool));
+                b.setTypeId(0);
+                for (ItemStack drop: drops) {
+                    net.minecraft.server.ItemStack item = ((CraftItemStack)drop).getHandle();
+
+                    dispenseItem(blockState, world, item, x, y, z, functions);
+                }
             }
         } else if ((functions & FUNCTION_INTERACTOR) != 0) {
             // Right-click on items
@@ -591,13 +604,15 @@ class BetterDispensersListener implements Listener {
                 // TODO: check if entities nearby, for right-clicking on (i.e., shears on sheep)
             }
         } else {
-            // Regular dispensing.. but possibly vertical or with special items
+            // Item dispensing
             int slot = tileEntity.findDispenseSlot();
 
             net.minecraft.server.ItemStack item = takeItem(tileEntity, slot, augmentStorage);
 
             dispenseItem(blockState, world, item, x, y, z, functions);
         }
+
+
 
         if ((functions & FUNCTION_TURRET) != 0) {
             // Turret rotates after dispensing
