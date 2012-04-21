@@ -32,6 +32,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.logging.Logger;
@@ -756,10 +758,14 @@ class BetterDispensersListener implements Listener {
     }
 
     // Get the destination inventory of a glass conduit
+    // This may be an InventoryHolder or part of the condut if its unconnected
+    // See also: Buildcraft pipes, RedPower tubes, Minefactory conveyers, MachinaCraft http://dev.bukkit.org/server-mods/machinacraft/
     public Block followConduit(Block origin) {
         Block block = origin;
 
         int limit = plugin.getConfig().getInt("conduit.maxLength", 100);
+
+        Set<Block> conduitBlocks = new HashSet<Block>();
 
         do {
             Block nextBlock = null;
@@ -768,7 +774,9 @@ class BetterDispensersListener implements Listener {
             for (BlockFace direction: surfaceDirections) {
                 Block near = block.getRelative(direction);
 
-                if (!near.equals(block) && near.getTypeId() == plugin.getConfig().getInt("conduit.blockID", 20 /* glass */)) {
+                // TODO: what if there are multiple.. should we check all, then choose one at random?
+
+                if (near.getTypeId() == plugin.getConfig().getInt("conduit.blockID", 20 /* glass */) && !conduitBlocks.contains(near)) {
                     plugin.log("conduit next "+direction+" from "+block+" to "+near);
                     nextBlock = near;
                     break;
@@ -783,19 +791,20 @@ class BetterDispensersListener implements Listener {
                 }
             }
 
-            block = nextBlock;
-
             // end of the line
             if (nextBlock == null) {
                 break;
             }
+
+            block = nextBlock;
+            conduitBlocks.add(block);   // to prevent looping in on self
 
             plugin.log("conduit length "+limit);
 
             limit -= 1;
         } while (limit > 0); 
 
-        return null;
+        return block;
     }
 
     private void filler(Dispenser dispenser, net.minecraft.server.ItemStack item) {
@@ -818,44 +827,27 @@ class BetterDispensersListener implements Listener {
             return;
         }
 
-        Block containerBlock = followConduit(connector);
-        InventoryHolder container = (InventoryHolder)containerBlock.getState();
-        Location containerLocation = containerBlock.getLocation();
+        Block endpoint = followConduit(connector);
+        BlockState endpointState = endpoint.getState();
 
-        /*
-        InventoryHolder container = null;
-        Location containerLocation = null;
-
-        // Find destination of conduit, any inventory holder block
-        // TODO: traverse connecting conduit, out of glass maybe? like http://dev.bukkit.org/server-mods/machinacraft/
-        for (BlockFace direction: surfaceDirections) {
-            Block near = connector.getRelative(direction);
-            if (near.equals(dispenser.getBlock())) {
-                continue;
-            }
-
-            BlockState blockState = near.getState();
-            if (blockState instanceof InventoryHolder) {
-                plugin.log("Found filler destination! immediate: " + near);
-                container = (InventoryHolder)blockState;
-                containerLocation = near.getLocation();
-                break;
-            }
-        }*/
-
-        if (container == null) {
-            plugin.log("No destination");
+        if (!(endpointState instanceof InventoryHolder)) {
+            plugin.log("No destination (unconnected conduit)");
+            // Drop on floor, or not. Opinions vary. Buildcraft pipes can overflow and cause item drops on
+            // the ground and lag if they clog up; RedPower's tubes only drop on ground if a machine does it
             if (plugin.getConfig().getBoolean("filler.unconnectedDrop", true)) {
-                connectorLocation.getWorld().dropItemNaturally(connectorLocation, new CraftItemStack(item));
+                endpoint.getLocation().getWorld().dropItemNaturally(endpoint.getLocation(), new CraftItemStack(item));
             }
             return;
         }
+
+        InventoryHolder container = (InventoryHolder)endpointState;
+
 
         // Add to destination inventory
         HashMap<Integer,ItemStack> excess = container.getInventory().addItem(new CraftItemStack(item));
         if (excess.size() != 0) {
             if (plugin.getConfig().getBoolean("filler.overflowDrop", true)) {
-                containerLocation.getWorld().dropItemNaturally(containerLocation, excess.get(0));
+                endpoint.getLocation().getWorld().dropItemNaturally(endpoint.getLocation(), excess.get(0));
             }
         }
     }
