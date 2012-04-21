@@ -213,6 +213,15 @@ class BetterDispensersListener implements Listener {
         Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
+    public static final int FUNCTION_CRAFTER    = 1 << 0;
+    public static final int FUNCTION_INTERACTOR = 1 << 1;
+    public static final int FUNCTION_BREAKER    = 1 << 2;
+    public static final int FUNCTION_VACUUM     = 1 << 3;
+    public static final int FUNCTION_STORAGE    = 1 << 4;
+    public static final int FUNCTION_ACCELERATOR= 1 << 5;
+    public static final int FUNCTION_TURRET     = 1 << 6;
+
+
     // Get bit mask of the configured 'functions' of the dispenser based on its surroundings
     public int getDispenserFunctions(Block origin) {
         int functions = 0;
@@ -231,6 +240,8 @@ class BetterDispensersListener implements Listener {
                 functions |= FUNCTION_VACUUM;
             } else if (id == plugin.getConfig().getInt("accelerator.blockID", 41 /* gold block */)) {
                 functions |= FUNCTION_ACCELERATOR;
+            } else if (id == plugin.getConfig().getInt("turret.blockID", 45 /* bricks */)) {
+                functions |= FUNCTION_TURRET;
             }
 
             BlockState bs = near.getState();
@@ -345,14 +356,6 @@ class BetterDispensersListener implements Listener {
         }
     }
 
-
-    public static final int FUNCTION_CRAFTER    = 1 << 0;
-    public static final int FUNCTION_INTERACTOR = 1 << 1;
-    public static final int FUNCTION_BREAKER    = 1 << 2;
-    public static final int FUNCTION_VACUUM     = 1 << 3;
-    public static final int FUNCTION_STORAGE    = 1 << 4;
-    public static final int FUNCTION_ACCELERATOR= 1 << 5;
-
     // handle up/down dispensers
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled=true)
     public void onBlockDispense(BlockDispenseEvent event) {
@@ -371,7 +374,6 @@ class BetterDispensersListener implements Listener {
         event.setCancelled(true);
 
         int functions = getDispenserFunctions(block);
-        plugin.log("functions="+functions);
 
         net.minecraft.server.World world = ((CraftWorld)block.getWorld()).getHandle();
         World bukkitWorld = (World)(world.getWorld());
@@ -595,6 +597,29 @@ class BetterDispensersListener implements Listener {
             net.minecraft.server.ItemStack item = takeItem(tileEntity, slot, augmentStorage);
 
             dispenseItem(blockState, world, item, x, y, z, functions);
+        }
+
+        if ((functions & FUNCTION_TURRET) != 0) {
+            // Turret rotates after dispensing
+
+            // TODO: what axis?
+
+            byte l = block.getData();
+
+            switch (l)
+            {
+            // rotate vertically.. kinda
+            case 0: l = 1; break; // down -> up
+            case 1: l = 0; break; // up -> down
+
+            // rotate horizontally
+            case 2: l = 5; break; // north -> east
+            case 3: l = 4; break; // south -> west
+            case 4: l = 2; break; // west -> north
+            case 5: l = 3; break; // east -> south
+            }
+            
+            block.setData(l, true);
         }
     }
 
