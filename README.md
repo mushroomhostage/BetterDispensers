@@ -1,5 +1,11 @@
 BetterDispensers - vertical dispensers, automatic crafting, block breakers, conduits, and more!
 
+Features:
+
+* Place dispensers facing up or down
+* No client mods required
+* Highly configurable
+
 With BetterDispensers you can:
 
 * Place dispensers facing up or down (and they shoot projectiles up/down when activated)
@@ -7,6 +13,8 @@ With BetterDispensers you can:
 * Add arrows to dispenser inventory when hit by arrows (optional)
 
 ## Basic Usage
+
+First and foremost, BetterDispensers lets you orient dispensers vertically:
 
 ***[Screenshots and tutorial](http://imgur.com/a/56DoO)***
 
@@ -19,33 +27,222 @@ Items dispensed from the dispenser will shoot in this direction.
 
 [Plugin Showcase video from WoopaGaming (v1.1)](http://www.youtube.com/watch?v=ZkNV41VP9T4)
 
+But that's just the beginning.
+
 ## Advanced Usage
 
+Regular dispensers have been enhanced:
 
+* Use the "/dispenser [direction]" while looking at a dispenser to change or view its direction
+* Hold shift while placing a dispenser to face it away from you
+* Add TNT, it will be primed 
+* Add liquids or buckets, they will be emptied out
+* Add boats or minecarts, they will be placed
+* Configure any of the velocities, force, spreads, allowed projectiles etc. in config.yml
 
-## Commands
-"/dispenser [direction]" while looking at a dispenser lets you change or view its direction.
-Requires betterdispensers.command permission.
+New kinds of dispenser can be created by placing specific blocks directly adjacent.
+Multiple blocks can be placed to combine their functionality. The new dispensers are:
+
+### Crafter
+
+The **crafter** is created by placing a *crafting table* next to a dispenser. 
+It is both an automatic crafting table and persistent crafting table.
+
+* You can access the dispenser's inventory through the crafting table
+* The crafting table inventory persists, no more items falling on the floor
+* When activated, dispenses items crafted from its internal crafting grid
+* Will not dispense if the recipe is invalid
+* Works great when combined with *Storage*
+
+### Interactor
+
+The **interactor** is created by placing a *lapis lazuli block* next to a dispenser.
+
+* When activated, will "use" the item on a block
+* Plant saplings, grow crops with bonemeal, till dirt with hoes, light fire with flint & steel, place blocks, etc.
+* Helpful to automate your farming
+* Acts as if you right-clicked the item on the top of the block
+* Reaches up to 7 blocks, staggering directly in front of the dispenser and one block below
+* Uses up tool durability
+* Will not dispense if item cannot interact with the block
+
+### Breaker
+
+The **breaker** is created by placing an *iron block* next to a dispenser.
+
+* When activated, breaks blocks and dispenses its drops
+* Requires a tool in the dispenser, and its durability will be used up
+* Blocks are broken instantly
+* Item drops take into account the tool used
+* Reaches up to 7 blocks in a straight line from the dispenser
+* Sends a BlockBreakEvent to other plugins (with user "[BetterDispensers]") and respects modifications
+* Modified tools from plugins like [EnchantMore](http://dev.bukkit.org/server-mods/enchantmore/) are supported (e.g., Shovel + Flame on sand; drops only)
+* Bedrock and portal blocks cannot be broken
+* Useful for making an automated tree farm, automated cobble generator, etc.
+* Will not dispense if no tool is present or block cannot be broken
+* Works great when combined with *Filler*
+
+### Vacuum
+
+The **vacuum** is created by placing an *obsidian* block next a dispenser.
+
+* When activated, sucks up item drops within 8 blocks into the dispenser inventory before dispensing
+* Items dropped from players automatically vacuumed up within 2 blocks, no need to activate
+* Player arrows hitting the dispenser will be added as well
+* Arrows hitting the dispenser from skeletons will not be added by default, but can be changed
+
+### Accelerator
+
+The **accelerator** is created by placing a *gold block* next to a dispenser.
+
+* Doubles Y velocity of dispensed item
+
+### Storage
+
+Any container block placed either directly adjacent to a dispenser, or at the end
+of a glass conduit, will augment its **storage** capabilities.
+The dispenser inventory specifies what items to take, and still must be filled.
+
+* A random item will be first chosen from *dispenser* in all cases
+* If the other container has an item of the same type, it will be taken from the container instead of the dispenser
+* If the other container does not have the item, it will be taken from the dispenser as usual
+* Containers include: chests, furnaces, brewing stands, other dispensers, custom container types (including [Iron Chests](http://www.minecraftforum.net/topic/981855-125-forge-sspsmpbukkit-ironchests-331/))
+* Will not dispense if the dispenser is empty
+
 
 ## Permissions
 betterdispensers.command (op): Allows you to use the /dispenser command
 
 ## Configuration
+Features can be turned off or tweaked as desired. Default configuration:
 
-
-dispenseOnPlayerArrowHit (true): Activate dispensers when they are hit by normal player-shot or dispensed arrows.
-
-dispenseOnOtherArrowHit (true): Activate dispensers when they are hit by other arrows, including those shot by skeletons or players with Infinity-enchanted bows.
-
-acceptPlayerArrows (true): Add normal arrows shot by players (or dispensers) that hit dispensers to the dispenser inventory.
-
-acceptOtherArrows (false): Add other arrows that hit dispensers to the dispenser inventory. This is false
-by default since otherwise you can acquire arrows you normally cannot (those shot by skeletons or from Infinity-enchanted bows).
+    verbose: true                   # log debugging information to the server console
+    tellPlayer: true                # send a player a message about the dispenser orientation when placed
+    
+    dispenser:
+        sneakReverseOrientation: true   # shift-click when placing dispenser to orient away from you
+        overrideHorizontal: true    # handle horizontal dispensing ourselves, disable to defer to Minecraft)
+        overrideVertical: true      # handle vertical dispensing
+        velocityHorizontal: 0.1     # small default velocity
+        velocityDown: -0.05         # velocity when dispensing downward
+        velocityUp: 0.4             # larger velocity when dispensing upward
+        dispenseOnPlayerArrows: true    # when hit by player arrows, activate dispenser
+        dispenseOnNonPlayerArrows: true # when hit by skeleton arrows, activate dispenser
+        arrowEnable: true           # shoot arrows
+        arrowForce: 1.1             # force of shot arrows
+        arrowSpread: 6.0            # random variation; set to 0 for precision
+        eggEnable: true             # throw eggs
+        eggForce: 1.1
+        eggSpread: 6.0
+        snowballForce: 1.1          # throw snowballs
+        snowballSpread: 6.0
+        snowballEnable: true
+        potionEnable: true          # throw splash potions
+        potionForce: 1.375          # more forceful in vanilla for some reason
+        potionSpread: 6.0
+        expbottleEnable: true       # throw experience bottles
+        expbottleForce: 1.1
+        expbottleSpread: 6.0
+        spawnEggEnable: true        # hatch spawn eggs
+        fireballEnable: true        # ignite fire charges
+        fireballRandomMotionX: 0.05
+        fireballRandomMotionY: 0.05
+        fireballRandomMotionZ: 0.05
+        tntEnable: true             # prime TNT
+        tntVelocityFactorY: 3.0     # multiply Y velocity for dispensing primed TNT
+        tntVelocityFactorHorizontal: 5.0    # multiple X and Z velocity
+        tntFuzz: 0.1                # random X/Y motion Gaussian maximum, less than item
+        tntVelocityBaseX: 1.0       # fixed velocity offset
+        tntVelocityBaseY: 0.0
+        tntVelocityBaseZ: 1.0
+        tntRandomMotionX: 0.045     # additional random Gaussian motion
+        tntRandomMotionY: 0.045
+        tntRandomMotionZ: 0.045
+        tntFuseTicks: 15            # time in ticks before exploding
+        liquidsEnable: true         # dispense liquid _blocks_ (or any block)
+        liquids:                    # liquids to flow from dispenser (blocks, not buckets)
+        - 8     # water source
+        - 9     # water flow
+        - 10    # lava source
+        - 11    # lava flow
+        - 162   # Buildcraft oil source
+        - 163   # Buildcraft oil flow
+        bucketsEnable: true         # empty liquids from buckets
+        bucketsKeep: true           # keep the empty bucket, rather than removing it
+        buckets:
+        - 326   # water bucket
+        - 327   # lava bucket
+        - 4063  # Buildcraft oil bucket
+        bucketLiquids:
+          326: 8    # water bucket -> water source
+          327: 10   # lava bucket -> lava source
+          4063: 162 # Buildcraft oil bucket -> oil source
+        boatEnable: true            # drop boats
+        cartEnable: true            # drop minecarts
+        itemEnable: true            # all other items dispense as item drops
+        itemVelocityFactorY: 2.0    # multiply Y velocity for dispensing non-projectile items (Minecraft default)
+        itemFuzz: 0.3               # random X/Y motion Gaussian maximum
+        itemRandomMotionX: 0.045    # additional random Gaussian motion
+        itemRandomMotionY: 0.045
+        itemRandomMotionZ: 0.045
+    
+    
+    crafter:
+        enable: true
+        blockID: 58     # crafting table
+    
+    interactor:
+        enable: true
+        blockID: 22     # lapis block
+        reachLimit: 7
+    
+    breaker:
+        enable: true
+        blockID: 42     # iron block
+        reachLimit: 7
+        unbreakableBlockIDs: 
+        - 7             # bedrock
+        - 90            # nether portal
+        - 119           # end portal
+        - 120           # end portal frame
+    
+    vacuum:
+        enable: true
+        blockID: 49     # obsidian
+        enablePlayerArrows: true        # accept arrows into dispenser if hit, from player or dispenser
+        enableNonPlayerArrows: false    # accept arrows from skeletons or infinity bows (see also: http://dev.bukkit.org/server-mods/pickuparrows/)
+        reachLimit: 8.0                 # before dispensing, vacuum up entities with this distance
+        itemDropRange: 2                # vacuum up player item drops within this many blocks
+        itemDropDelayTicks: 10          # delay before vacuuming player item drops
+    
+    accelerator:
+        enable: true
+        blockID: 41     # gold block
+        velocityFactorY: 2.0            # multiply Y velocity when accelerated
+    
+    storage:
+        # any container block
+    
+    turret:
+        enable: true
+        blockID: 45     # bricks
+    
+    filler:
+        enable: true
+        blockID: 5      # plank
+        unconnectedDrop: true       # if left unconnected, drop items on ground, otherwise discard
+        overflowDrop: true          # if destination overflows, drop items on ground, otherwise discard
+    
+    conduit:
+        blockID: 20     # glass
+        maxLength: 100
+    
+    
 
 ## See also
 
-* [Buildcraft](http://www.mod-buildcraft.com/) - client/server mod with pipes, automatic crafting
-* [RedPower](http://www.minecraftforum.net/topic/365357-125-eloraams-mods-redpower-2-prerelease-5/) - client/server mod with pneumatic tubes, block breaker, deployer
+* [Buildcraft](http://www.mod-buildcraft.com/) - client/server mod with pipes, automatic crafting, mining
+* [RedPower](http://www.minecraftforum.net/topic/365357-125-eloraams-mods-redpower-2-prerelease-5/) - client/server mod with pneumatic tubes, block breaker, deployer, project table
 * [MineFactory](https://github.com/balr0g/MineFactoryReloaded/wiki) - client/server mod with conveyer belts
 * [MachinaCraft](http://dev.bukkit.org/server-mods/machinacraft) - server plugin framework, [MachinaFactory](http://dev.bukkit.org/server-mods/machinacraft/pages/machina-factory/) module includes pipelines, fabricator, item relays
 * [Plugin Request: Buildcraft for bukkit?](http://forums.bukkit.org/threads/buildcraft-for-bukkit.21393/#post-475948) - idea of transferring items through glass

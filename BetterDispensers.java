@@ -223,7 +223,8 @@ class BetterDispensersListener implements Listener {
     public static final int FUNCTION_STORAGE    = 1 << 4;
     public static final int FUNCTION_ACCELERATOR= 1 << 5;
     public static final int FUNCTION_TURRET     = 1 << 6;
-    public static final int FUNCTION_FILLER     = 1 << 7;
+    public static final int FUNCTION_FILLER     = 1 << 7;   // dispenser puts items in conduit via filler
+    public static final int FUNCTION_CONDUIT    = 1 << 8;   // dispenser takes items from conduit directly
 
 
     // Get bit mask of the configured 'functions' of the dispenser based on its surroundings
@@ -248,6 +249,8 @@ class BetterDispensersListener implements Listener {
                 functions |= FUNCTION_TURRET;
             } else if (id == plugin.getConfig().getInt("filler.blockID", 5 /* plank */) && plugin.getConfig().getBoolean("filler.enable", true)) {
                 functions |= FUNCTION_FILLER;
+            } else if (id == plugin.getConfig().getInt("conduit.blockID", 20 /* glass */) && plugin.getConfig().getBoolean("conduit.enableDirectConnection", true)) {
+                functions |= FUNCTION_CONDUIT;
             }
 
             BlockState bs = near.getState();
@@ -398,7 +401,7 @@ class BetterDispensersListener implements Listener {
             // so we can't suck up items unless we already have any, run dry, things break
 
             List<Entity> entities = bukkitWorld.getEntities();  // TODO: can we only get nearby? there is for other entities near us but not blocks..
-            double reachLimit = plugin.getConfig().getDouble("vacuum.reachLimit", 64.0);
+            double reachLimit = plugin.getConfig().getDouble("vacuum.reachLimit", 8.0);
             double reachLimitSquared = reachLimit * reachLimit;
             for (Entity entity: entities) {
                 if (!entity.getWorld().equals(bukkitWorld)) {
@@ -435,6 +438,30 @@ class BetterDispensersListener implements Listener {
                     augmentStorage = (InventoryHolder)nearState;
                     plugin.log("found augment storage "+augmentStorage);
                     break;
+                }
+            }
+        }
+
+        if ((functions & FUNCTION_CONDUIT) != 0) {
+            // Possibly pull from extra storage container at end of directly-connected conduit
+            Block connection = null;
+            for (BlockFace direction: surfaceDirections) {
+                Block near = block.getRelative(direction);
+
+                if (near.getTypeId() == plugin.getConfig().getInt("conduit.blockID", 20 /* glass */)) {
+                    connection = near;
+                    break;
+                }
+            }
+            if (connection == null) {
+                plugin.log("couldn't find directly connected conduit");
+            } else {
+                Block endpoint = followConduit(connection);
+                BlockState endpointState = endpoint.getState();
+
+                if (endpointState instanceof InventoryHolder) {
+                    augmentStorage = (InventoryHolder)endpointState;
+                    plugin.log("found augment storage via conduit "+augmentStorage);
                 }
             }
         }
@@ -620,7 +647,6 @@ class BetterDispensersListener implements Listener {
                 if (isTool(item)) {
                     damageToolInDispenser(item, slot, tileEntity);
                 } else {
-                    // TODO: why is this already split? double-counts somewhere
                     tileEntity.splitStack(slot, 1);
                 }
             } else {
