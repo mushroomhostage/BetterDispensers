@@ -109,6 +109,13 @@ The dispenser inventory specifies what items to take, and still must be filled.
 * Containers include: chests, furnaces, brewing stands, other dispensers, custom container types (including [Iron Chests](http://www.minecraftforum.net/topic/981855-125-forge-sspsmpbukkit-ironchests-331/))
 * Will not dispense if the dispenser is empty
 
+### Conduit
+
+**Conduits** form BetterDispenser's primitive transport networks. Built out of
+*glass*, they can stretch up to 100 blocks and can instantly move items between
+dispensers and other containers.
+
+* When directly connected to a dispenser, the dispenser pulls items out of the container 
 
 ## Permissions
 betterdispensers.command (op): Allows you to use the /dispenser command

@@ -444,25 +444,12 @@ class BetterDispensersListener implements Listener {
 
         if ((functions & FUNCTION_CONDUIT) != 0) {
             // Possibly pull from extra storage container at end of directly-connected conduit
-            Block connection = null;
-            for (BlockFace direction: surfaceDirections) {
-                Block near = block.getRelative(direction);
+            Block endpoint = followConduit(dispenser.getBlock());
+            BlockState endpointState = endpoint.getState();
 
-                if (near.getTypeId() == plugin.getConfig().getInt("conduit.blockID", 20 /* glass */)) {
-                    connection = near;
-                    break;
-                }
-            }
-            if (connection == null) {
-                plugin.log("couldn't find directly connected conduit");
-            } else {
-                Block endpoint = followConduit(connection);
-                BlockState endpointState = endpoint.getState();
-
-                if (endpointState instanceof InventoryHolder) {
-                    augmentStorage = (InventoryHolder)endpointState;
-                    plugin.log("found augment storage via conduit "+augmentStorage);
-                }
+            if (endpointState instanceof InventoryHolder) {
+                augmentStorage = (InventoryHolder)endpointState;
+                plugin.log("found augment storage via conduit "+augmentStorage);
             }
         }
 
@@ -827,6 +814,8 @@ class BetterDispensersListener implements Listener {
 
         Set<Block> conduitBlocks = new HashSet<Block>();
 
+        conduitBlocks.add(origin);
+
         do {
             Block nextBlock = null;
 
@@ -834,9 +823,14 @@ class BetterDispensersListener implements Listener {
             for (BlockFace direction: surfaceDirections) {
                 Block near = block.getRelative(direction);
 
+                if (conduitBlocks.contains(near)) {
+                    // do not visit what we visited
+                    continue;
+                }
+
                 // TODO: what if there are multiple.. should we check all, then choose one at random?
 
-                if (near.getTypeId() == plugin.getConfig().getInt("conduit.blockID", 20 /* glass */) && !conduitBlocks.contains(near)) {
+                if (near.getTypeId() == plugin.getConfig().getInt("conduit.blockID", 20 /* glass */)) {
                     plugin.log("conduit next "+direction+" from "+block+" to "+near);
                     nextBlock = near;
                     break;
@@ -859,7 +853,7 @@ class BetterDispensersListener implements Listener {
             block = nextBlock;
             conduitBlocks.add(block);   // to prevent looping in on self
 
-            plugin.log("conduit length "+limit);
+            plugin.log("conduit length remaining "+limit);
 
             limit -= 1;
         } while (limit > 0); 
