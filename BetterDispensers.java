@@ -621,7 +621,7 @@ class BetterDispensersListener implements Listener {
                     damageToolInDispenser(item, slot, tileEntity);
                 } else {
                     // TODO: why is this already split? double-counts somewhere
-                    //tileEntity.splitStack(slot, 1);
+                    tileEntity.splitStack(slot, 1);
                 }
             } else {
                 // This item is not interactable with this block
