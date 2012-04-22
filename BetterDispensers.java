@@ -810,7 +810,7 @@ class BetterDispensersListener implements Listener {
     public Block followConduit(Block origin, Block ignore) {
         Block block = origin;
 
-        int limit = plugin.getConfig().getInt("conduit.maxLength", 100);
+        int limit = plugin.getConfig().getInt("conduit.maxLength", 1000);
 
         Set<Block> conduitBlocks = new HashSet<Block>();
 

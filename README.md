@@ -1,16 +1,14 @@
 BetterDispensers - vertical dispensers, automatic crafting, block breakers, conduits, and more!
 
-Features:
+Dispensers, reinvented. Featuring:
 
-* Place dispensers facing up or down
+* Vertical dispensers
+* TNT, liquid, boat, minecart dispensing
+* Conduits for transporting items to and from dispensers
+* New dispenser functions: crafter, interactor, breaker, vacuum, accelerator, storage, filler, turret
+* New dispenser functions can be combined with each other
 * No client mods required
 * Highly configurable
-
-With BetterDispensers you can:
-
-* Place dispensers facing up or down (and they shoot projectiles up/down when activated)
-* Activate dispensers when they are hit by arrows (optional)
-* Add arrows to dispenser inventory when hit by arrows (optional)
 
 ## Basic Usage
 
@@ -73,10 +71,9 @@ The **breaker** is created by placing an *iron block* next to a dispenser.
 * When activated, breaks blocks and dispenses its drops
 * Requires a tool in the dispenser, and its durability will be used up
 * Blocks are broken instantly
-* Item drops take into account the tool used
 * Reaches up to 7 blocks in a straight line from the dispenser
 * Sends a BlockBreakEvent to other plugins (with user "[BetterDispensers]") and respects modifications
-* Modified tools from plugins like [EnchantMore](http://dev.bukkit.org/server-mods/enchantmore/) are supported (e.g., Shovel + Flame on sand; drops only)
+* Modified tools from plugins like [EnchantMore](http://dev.bukkit.org/server-mods/enchantmore/) are supported (e.g., Shovel + Flame on sand = glass; drops only)
 * Bedrock and portal blocks cannot be broken
 * Useful for making an automated tree farm, automated cobble generator, etc.
 * Will not dispense if no tool is present or block cannot be broken
@@ -89,7 +86,7 @@ The **vacuum** is created by placing an *obsidian* block next a dispenser.
 * When activated, sucks up item drops within 8 blocks into the dispenser inventory before dispensing
 * Items dropped from players automatically vacuumed up within 2 blocks, no need to activate
 * Player arrows hitting the dispenser will be added as well
-* Arrows hitting the dispenser from skeletons will not be added by default, but can be changed
+* Arrows hitting the dispenser from skeletons will not be added by default, but can be enabled
 
 ### Accelerator
 
@@ -100,7 +97,7 @@ The **accelerator** is created by placing a *gold block* next to a dispenser.
 ### Storage
 
 Any container block placed either directly adjacent to a dispenser, or at the end
-of a glass conduit, will augment its **storage** capabilities.
+of a glass conduit connected to the dispenser, will augment its **storage** capabilities.
 The dispenser inventory specifies what items to take, and still must be filled.
 
 * A random item will be first chosen from *dispenser* in all cases
@@ -112,15 +109,29 @@ The dispenser inventory specifies what items to take, and still must be filled.
 ### Conduit
 
 **Conduits** form BetterDispenser's primitive transport networks. Built out of
-*glass*, they can stretch up to 100 contiguous blocks and can instantly move items between
+*glass*, they can stretch up to 1000 contiguous blocks and can instantly move items between
 dispensers and other containers.
 
-* When directly connected to a dispenser, the dispenser pulls items out of the container at the end of the conduit, if any (see *Storage*)
+* When directly connected to a dispenser, the dispenser pulls items *out* of the container at the end of the conduit (see *Storage*)
 * When connected via wooden plank to a dispenser, the dispenser dispenses items *into* the conduit (see *Filler*)
+* Only can follow one route
 
-## Filler
+### Filler
 
-The **filler** is created by placing a *wooden plank* next to a dispenser, followed by a conduit.
+The **filler** is created by placing a *wooden plank* next to a dispenser, optionally connected to a conduit.
+They override dispenser's normal dispensing as items in the world, and instead dispense items into a conduit.
+
+* Fillers insert items into a conduit, taken from the dispenser
+* If the end of the conduit is connected to a container, items will be placed within it
+* If not, items will be dropped on the ground at the end of the conduit
+* If the container overflows, excess items will be dropped on the ground
+
+### Turret
+
+The **turret** is created by placing a **brick** block next to a dispenser. 
+
+* After each dispense, the orientation will rotate
+* Try it with TNT
 
 ## Permissions
 betterdispensers.command (op): Allows you to use the /dispenser command
@@ -133,7 +144,7 @@ Features can be turned off or tweaked as desired. Default configuration:
 
 * [Buildcraft](http://www.mod-buildcraft.com/) - client/server mod with pipes, automatic crafting, mining
 * [RedPower](http://www.minecraftforum.net/topic/365357-125-eloraams-mods-redpower-2-prerelease-5/) - client/server mod with pneumatic tubes, block breaker, deployer, project table
-* [MineFactory](https://github.com/balr0g/MineFactoryReloaded/wiki) - client/server mod with conveyer belts
+* [MineFactory](https://github.com/balr0g/MineFactoryReloaded/wiki) - client/server mod with conveyor belts
 * [MachinaCraft](http://dev.bukkit.org/server-mods/machinacraft) - server plugin framework, [MachinaFactory](http://dev.bukkit.org/server-mods/machinacraft/pages/machina-factory/) module includes pipelines, fabricator, item relays
 * [Plugin Request: Buildcraft for bukkit?](http://forums.bukkit.org/threads/buildcraft-for-bukkit.21393/#post-475948) - idea of transferring items through glass
 * [Sure, I'll mod that for you: dispensers can face upward and downward! For shooting arrows, splash potions, snowballs, or even eggs (perfect for traps). Also: dispensers accept arrows and dispense when hit (BetterDispensers v1.0)](http://www.reddit.com/r/Minecraft/comments/ptgv2/sure_ill_mod_that_for_you_dispensers_can_face/). - initial release
