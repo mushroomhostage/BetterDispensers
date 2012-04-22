@@ -10,6 +10,8 @@ Dispensers, reinvented. Featuring:
 * No client mods required
 * Highly configurable
 
+**[Download BetterDispensers 2.0](http://dev.bukkit.org/server-mods/betterdispensers/files/5-better-dispensers-2-0/)** - released 2012/04/21 for 1.2.5
+
 ## Basic Usage
 
 First and foremost, BetterDispensers lets you orient dispensers vertically:
