@@ -89,6 +89,7 @@ The **vacuum** is created by placing an *obsidian* block next a dispenser.
 * Items dropped from players automatically vacuumed up within 2 blocks, no need to activate
 * Player arrows hitting the dispenser will be added as well
 * Arrows hitting the dispenser from skeletons will not be added by default, but can be enabled
+* *Important*: will not vacuum if the dispenser is empty - fill it with something
 
 ### Accelerator
 
@@ -106,7 +107,7 @@ The dispenser inventory specifies what items to take, and still must be filled.
 * If the other container has an item of the same type, it will be taken from the container instead of the dispenser
 * If the other container does not have the item, it will be taken from the dispenser as usual
 * Containers include: chests, furnaces, brewing stands, other dispensers, custom container types (including [Iron Chests](http://www.minecraftforum.net/topic/981855-125-forge-sspsmpbukkit-ironchests-331/))
-* Will not dispense if the dispenser is empty
+* *Important*: will not dispense if the dispenser is empty - fill it with what you want to pull
 
 ### Conduit
 
