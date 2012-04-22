@@ -444,7 +444,7 @@ class BetterDispensersListener implements Listener {
 
         if ((functions & FUNCTION_CONDUIT) != 0) {
             // Possibly pull from extra storage container at end of directly-connected conduit
-            Block endpoint = followConduit(dispenser.getBlock());
+            Block endpoint = followConduit(dispenser.getBlock(), null);
             BlockState endpointState = endpoint.getState();
 
             if (endpointState instanceof InventoryHolder) {
@@ -807,14 +807,17 @@ class BetterDispensersListener implements Listener {
     // Get the destination inventory of a glass conduit
     // This may be an InventoryHolder or part of the condut if its unconnected
     // See also: Buildcraft pipes, RedPower tubes, Minefactory conveyers, MachinaCraft http://dev.bukkit.org/server-mods/machinacraft/
-    public Block followConduit(Block origin) {
+    public Block followConduit(Block origin, Block ignore) {
         Block block = origin;
 
         int limit = plugin.getConfig().getInt("conduit.maxLength", 100);
 
         Set<Block> conduitBlocks = new HashSet<Block>();
 
-        conduitBlocks.add(origin);
+        conduitBlocks.add(origin);  // either dispenser itself, or filler wooden plank connector
+        if (ignore != null) {
+            conduitBlocks.add(ignore);  // dispenser itself to ignore, if via filler
+        }
 
         do {
             Block nextBlock = null;
@@ -881,7 +884,7 @@ class BetterDispensersListener implements Listener {
             return;
         }
 
-        Block endpoint = followConduit(connector);
+        Block endpoint = followConduit(connector, dispenser.getBlock());
         BlockState endpointState = endpoint.getState();
 
         if (!(endpointState instanceof InventoryHolder)) {
