@@ -892,7 +892,9 @@ class BetterDispensersListener implements Listener {
             // Drop on floor, or not. Opinions vary. Buildcraft pipes can overflow and cause item drops on
             // the ground and lag if they clog up; RedPower's tubes only drop on ground if a machine does it
             if (plugin.getConfig().getBoolean("filler.unconnectedDrop", true)) {
-                endpoint.getLocation().getWorld().dropItemNaturally(endpoint.getLocation(), new CraftItemStack(item));
+                if (item != null && item.id != 0) {
+                    endpoint.getLocation().getWorld().dropItemNaturally(endpoint.getLocation(), new CraftItemStack(item));
+                }
             }
             return;
         }
