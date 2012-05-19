@@ -142,6 +142,130 @@ betterdispensers.command (op): Allows you to use the /dispenser command
 ## Configuration
 Features can be turned off or tweaked as desired. Default configuration:
 
+    verbose: false                  # log debugging information to the server console
+    tellPlayer: true                # send a player a message about the dispenser orientation when placed
+
+    dispenser:
+        sneakReverseOrientation: true   # shift-click when placing dispenser to orient away from you
+        overrideHorizontal: true    # handle horizontal dispensing ourselves, disable to defer to Minecraft)
+        overrideVertical: true      # handle vertical dispensing
+        velocityHorizontal: 0.1     # small default velocity
+        velocityDown: -0.05         # velocity when dispensing downward
+        velocityUp: 0.4             # larger velocity when dispensing upward
+        dispenseOnPlayerArrows: true    # when hit by player arrows, activate dispenser
+        dispenseOnNonPlayerArrows: true # when hit by skeleton arrows, activate dispenser
+        arrowEnable: true           # shoot arrows
+        arrowForce: 1.1             # force of shot arrows
+        arrowSpread: 6.0            # random variation; set to 0 for precision
+        eggEnable: true             # throw eggs
+        eggForce: 1.1
+        eggSpread: 6.0
+        snowballForce: 1.1          # throw snowballs
+        snowballSpread: 6.0
+        snowballEnable: true
+        potionEnable: true          # throw splash potions
+        potionForce: 1.375          # more forceful in vanilla for some reason
+        potionSpread: 6.0
+        expbottleEnable: true       # throw experience bottles
+        expbottleForce: 1.1
+        expbottleSpread: 6.0
+        spawnEggEnable: true        # hatch spawn eggs
+        fireballEnable: true        # ignite fire charges
+        fireballRandomMotionX: 0.05
+        fireballRandomMotionY: 0.05
+        fireballRandomMotionZ: 0.05
+        tntEnable: true             # prime TNT
+        tntVelocityFactorY: 3.0     # multiply Y velocity for dispensing primed TNT
+        tntVelocityFactorHorizontal: 5.0    # multiple X and Z velocity
+        tntFuzz: 0.1                # random X/Y motion Gaussian maximum, less than item
+        tntVelocityBaseX: 1.0       # fixed velocity offset
+        tntVelocityBaseY: 0.0
+        tntVelocityBaseZ: 1.0
+        tntRandomMotionX: 0.045     # additional random Gaussian motion
+        tntRandomMotionY: 0.045
+        tntRandomMotionZ: 0.045
+        tntFuseTicks: 15            # time in ticks before exploding
+        liquidsEnable: true         # dispense liquid _blocks_ (or any block)
+        liquids:                    # liquids to flow from dispenser (blocks, not buckets)
+        - 8     # water source
+        - 9     # water flow
+        - 10    # lava source
+        - 11    # lava flow
+        - 162   # Buildcraft oil source
+        - 163   # Buildcraft oil flow
+        bucketsEnable: true         # empty liquids from buckets
+        bucketsKeep: true           # keep the empty bucket, rather than removing it
+        buckets:
+        - 326   # water bucket
+        - 327   # lava bucket
+        - 4063  # Buildcraft oil bucket
+        bucketLiquids:
+          326: 8    # water bucket -> water source
+          327: 10   # lava bucket -> lava source
+          4063: 162 # Buildcraft oil bucket -> oil source
+        boatEnable: true            # drop boats
+        cartEnable: true            # drop minecarts
+        itemEnable: true            # all other items dispense as item drops
+        itemVelocityFactorY: 2.0    # multiply Y velocity for dispensing non-projectile items (Minecraft default)
+        itemFuzz: 0.3               # random X/Y motion Gaussian maximum
+        itemRandomMotionX: 0.045    # additional random Gaussian motion
+        itemRandomMotionY: 0.045
+        itemRandomMotionZ: 0.045
+
+
+    crafter:
+        enable: true
+        blockID: 58     # crafting table
+
+    interactor:
+        enable: true
+        blockID: 22     # lapis block
+        reachLimit: 7
+
+    breaker:
+        enable: true
+        blockID: 42     # iron block
+        reachLimit: 7
+        unbreakableBlockIDs: 
+        - 7             # bedrock
+        - 90            # nether portal
+        - 119           # end portal
+        - 120           # end portal frame
+
+    vacuum:
+        enable: true
+        blockID: 49     # obsidian
+        enablePlayerArrows: true        # accept arrows into dispenser if hit, from player or dispenser
+        enableNonPlayerArrows: false    # accept arrows from skeletons or infinity bows (see also: http://dev.bukkit.org/server-mods/pickuparrows/)
+        reachLimit: 8.0                 # before dispensing, vacuum up entities with this distance
+        itemDropRange: 2                # vacuum up player item drops within this many blocks
+        itemDropDelayTicks: 10          # delay before vacuuming player item drops
+
+    accelerator:
+        enable: true
+        blockID: 41     # gold block
+        velocityFactorY: 2.0            # multiply Y velocity when accelerated
+
+    storage:
+        # any container block
+
+    conduit:
+        blockID: 20     # glass
+        enableDirectConnection: true    # glass can connect directly to dispensers to pull from storage (vs through fillers)
+        maxLength: 1000
+
+    filler:
+        enable: true
+        blockID: 5      # plank
+        unconnectedDrop: true       # if left unconnected, drop items on ground, otherwise discard
+        overflowDrop: true          # if destination overflows, drop items on ground, otherwise discard
+
+    turret:
+        enable: true
+        blockID: 45     # bricks
+
+
+
 
 ## See also
 
