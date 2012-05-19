@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Random;
+import java.util.UUID;
 import java.lang.Byte;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -194,14 +195,14 @@ class BetterDispensersListener implements Listener {
     // Player for performing actions from the dispenser
     net.minecraft.server.EntityPlayer fakePlayer;
 
-    ConcurrentHashMap<Player,Dispenser> openedCrafters;
+    ConcurrentHashMap<UUID,Dispenser> openedCrafters;
 
     public BetterDispensersListener(BetterDispensers plugin) {
         this.plugin = plugin;
 
         this.random = new Random();
 
-        this.openedCrafters = new ConcurrentHashMap<Player,Dispenser>();
+        this.openedCrafters = new ConcurrentHashMap<UUID,Dispenser>();
 
         net.minecraft.server.MinecraftServer console = ((CraftServer)Bukkit.getServer()).getServer();
         net.minecraft.server.ItemInWorldManager manager = new net.minecraft.server.ItemInWorldManager(console.getWorldServer(0));
@@ -1154,7 +1155,7 @@ class BetterDispensersListener implements Listener {
         }
 
         // For tracking close
-        openedCrafters.put(player, dispenser);
+        openedCrafters.put(player.getUniqueId(), dispenser);
     }
 
     // Save crafting table to dispenser inventory on close
@@ -1173,11 +1174,11 @@ class BetterDispensersListener implements Listener {
         }
         Player player = (Player)holder;
 
-        Dispenser dispenser = openedCrafters.get(player);
+        Dispenser dispenser = openedCrafters.get(player.getUniqueId());
         if (dispenser == null) {
             return;
         }
-        openedCrafters.remove(player);
+        openedCrafters.remove(player.getUniqueId());
 
         // Copy crafting table view inventory to dispenser (ignore craft result)
         for (int i = 1; i < inventory.getSize(); i += 1) {
