@@ -10,7 +10,7 @@ Dispensers, reinvented. Featuring:
 * No client mods required
 * Highly configurable
 
-**[Download BetterDispensers 2.0](http://dev.bukkit.org/server-mods/betterdispensers/files/5-better-dispensers-2-0/)** - released 2012/04/21 for 1.2.5
+**[Download BetterDispensers 2.1](http://dev.bukkit.org/server-mods/betterdispensers/files/7-better-dispensers-2-1/)** - released 2012/05/19 for 1.2.5
 
 ## Basic Usage
 

@@ -1,6 +1,7 @@
-X   X
-    * Add support for multiple containers connected to conduits (skip empty containers)
+2012-05-19  2.1
+    * Add support for multiple containers connected to conduits (skips empty containers)
     * Use UUID in HashMap instead of Player, fix potential memory leak/future incompatibility
+    * Test on CraftBukkit 1.2.5-R2.0
 
 2012-04-21  2.0
     * Add dispensing TNT, liquid, boat, minecart
