@@ -12,6 +12,8 @@ Dispensers, reinvented. Featuring:
 
 **[Download BetterDispensers 2.1](http://dev.bukkit.org/server-mods/betterdispensers/files/7-better-dispensers-2-1/)** - released 2012/05/19 for 1.2.5
 
+[Forum thread](http://forums.bukkit.org/threads/mech-betterdispensers-v2-1-vertical-auto-crafter-block-breaker-conduits-more-1-2-5-r2-0.76462/)
+
 ## Basic Usage
 
 First and foremost, BetterDispensers lets you orient dispensers vertically:
