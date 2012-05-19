@@ -832,7 +832,9 @@ class BetterDispensersListener implements Listener {
                     continue;
                 }
 
-                // TODO: what if there are multiple.. should we check all, then choose one at random?
+                // Choose the first non-empty inventory
+                
+                // TODO: what if there are multiple routes.. should we check all, then choose one at random?
 
                 if (near.getTypeId() == plugin.getConfig().getInt("conduit.blockID", 20 /* glass */)) {
                     plugin.log("conduit next "+direction+" from "+block+" to "+near);
@@ -845,7 +847,23 @@ class BetterDispensersListener implements Listener {
                     // This is our stop!
                     //return (InventoryHolder)state;
                     plugin.log("conduit found "+(InventoryHolder)state);
-                    return near;    // return the block, so can also convey the location :(
+
+                    // ...wait, is it?
+                    Inventory inventory = ((InventoryHolder)state).getInventory();
+                    ItemStack[] contents = inventory.getContents();
+                    boolean isEmpty = true;
+                    for (int i = 0; i < contents.length; i += 1) {
+                        if (contents[i] != null && contents[i].getType() != Material.AIR) {
+                            isEmpty = false;
+                            break;
+                        }
+                    }
+
+                    if (isEmpty) {
+                        plugin.log(" but inventory is empty, ignoring");
+                    } else {
+                        return near;    // return the block, so can also convey the location :(
+                    }
                 }
             }
 

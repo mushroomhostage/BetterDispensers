@@ -1,4 +1,5 @@
 X   X
+    * Add support for multiple containers connected to conduits (skip empty containers)
     * Use UUID in HashMap instead of Player, fix potential memory leak/future incompatibility
 
 2012-04-21  2.0

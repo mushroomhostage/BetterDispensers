@@ -106,6 +106,7 @@ The dispenser inventory specifies what items to take, and still must be filled.
 * A random item will be first chosen from *dispenser* in all cases
 * If the other container has an item of the same type, it will be taken from the container instead of the dispenser
 * If the other container does not have the item, it will be taken from the dispenser as usual
+* If the container is empty, the next one (if any) along the conduit will be chosen
 * Containers include: chests, furnaces, brewing stands, other dispensers, custom container types (including [Iron Chests](http://www.minecraftforum.net/topic/981855-125-forge-sspsmpbukkit-ironchests-331/))
 * *Important*: will not dispense if the dispenser is empty - fill it with what you want to pull
 
